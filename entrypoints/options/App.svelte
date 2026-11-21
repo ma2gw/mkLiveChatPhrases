@@ -138,7 +138,7 @@
         editor.errors = result.errors;
       }
     } catch (e) {
-      console.warn('[LiveChatPhrases] 保存できませんでした', e);
+      console.warn('[MkLiveChatPhrases] 保存できませんでした', e);
       editor.errors = [{ code: 'invalidShape', detail: String(e) }];
     } finally {
       saving = false;
@@ -154,7 +154,7 @@
     const blob = new Blob([exportToJson($state.snapshot(editor.draft) as PhraseData)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `live-chat-phrases-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `mk-live-chat-phrases-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(a.href);
   }
@@ -203,9 +203,12 @@
   <div class="header-inner">
   <h1>{t('extName')}</h1>
   <div class="bar">
-    <span class="status">
-      {#if editor.notice}{editor.notice}{:else if dirty}{t('unsaved')}{/if}
-    </span>
+    {#if editor.notice}
+      <span class="status">{editor.notice}</span>
+    {:else if dirty}
+      <!-- 保存し忘れないように目立たせる -->
+      <span class="status unsaved">● {t('unsaved')}</span>
+    {/if}
     <button type="button" class="primary" onclick={save} disabled={!dirty || saving}>{t('save')}</button>
     <button type="button" onclick={() => fileInput.click()}>{t('import')}</button>
     <button type="button" onclick={exportFile} disabled={dirty} title={dirty ? t('exportNeedsSave') : ''}
@@ -293,6 +296,10 @@
   }
   .status {
     color: var(--muted);
+  }
+  .status.unsaved {
+    color: var(--warning);
+    font-weight: bold;
   }
   .banner,
   .errors {

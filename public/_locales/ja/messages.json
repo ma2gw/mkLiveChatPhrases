@@ -1,7 +1,7 @@
 {
   "extName": {
-    "message": "Live Chat Phrases",
-    "description": "拡張機能名（仮）"
+    "message": "MkLiveChatPhrases",
+    "description": "拡張機能名"
   },
   "extDescription": {
     "message": "ライブチャット用の定型文をワンクリックでコピーします。",

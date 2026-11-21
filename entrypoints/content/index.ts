@@ -33,14 +33,14 @@ export default defineContentScript({
           if (!next) return false;
           const result = await saveData(next);
           if (!result.ok) {
-            console.warn('[LiveChatPhrases] 追加できませんでした', result.errors);
+            console.warn('[MkLiveChatPhrases] 追加できませんでした', result.errors);
             return false;
           }
           data = next;
           refresh();
           return true;
         } catch (e) {
-          console.warn('[LiveChatPhrases] 追加できませんでした', e);
+          console.warn('[MkLiveChatPhrases] 追加できませんでした', e);
           return false;
         }
       },
@@ -49,20 +49,20 @@ export default defineContentScript({
         const page = getPageChannel();
         const channelId = data && page ? findChannel(data, page)?.id : undefined;
         browser.runtime.sendMessage({ type: 'openEditor', channelId }).catch((e: unknown) => {
-          console.warn('[LiveChatPhrases] 編集画面を開けませんでした', e);
+          console.warn('[MkLiveChatPhrases] 編集画面を開けませんでした', e);
         });
       },
       onRegisterChannel() {
         const page = getPageChannel();
         if (!page) return;
         browser.runtime.sendMessage({ type: 'openEditor', newChannel: page }).catch((e: unknown) => {
-          console.warn('[LiveChatPhrases] 編集画面を開けませんでした', e);
+          console.warn('[MkLiveChatPhrases] 編集画面を開けませんでした', e);
         });
       },
     };
 
     const ui = await createShadowRootUi(ctx, {
-      name: 'live-chat-phrases',
+      name: 'mk-live-chat-phrases',
       position: 'inline',
       anchor: 'body',
       css: styleText,
@@ -88,7 +88,7 @@ export default defineContentScript({
         .catch((e: unknown) => {
           data = null;
           loadError = e instanceof NewerSchemaVersionError ? 'newerSchemaVersion' : 'loadFailed';
-          console.warn('[LiveChatPhrases] データを読めませんでした', e);
+          console.warn('[MkLiveChatPhrases] データを読めませんでした', e);
         })
         .finally(refresh);
 

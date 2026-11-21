@@ -14,6 +14,7 @@
   --lcp-button-hover: #e5e5e5;
   --lcp-accent: #3ea6ff;
   --lcp-once: #e8710a;
+  --lcp-icon-bg: #1e8e3e;
   --lcp-ok: #2e9d5b;
   --lcp-ng: #d93025;
   position: fixed;
@@ -40,16 +41,16 @@
   user-select: none;
 }
 
-/* 閉じているときのアイコン */
+/* 閉じているときのアイコン（緑の丸に白い吹き出し。ライト / ダークで同じ色） */
 .lcp-icon {
   display: block;
   width: 40px;
   height: 40px;
   padding: 8px;
-  border: 1px solid var(--lcp-border);
+  border: none;
   border-radius: 50%;
-  background: var(--lcp-bg);
-  color: var(--lcp-fg);
+  background: var(--lcp-icon-bg);
+  color: #ffffff;
   box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
   cursor: pointer;
   user-select: none;
@@ -57,7 +58,7 @@
 }
 
 .lcp-icon:hover {
-  background: var(--lcp-button-hover);
+  filter: brightness(1.1);
 }
 
 .lcp-icon:focus-visible,

@@ -25,7 +25,7 @@
       await saveSettings($state.snapshot(settings));
       failed = false;
     } catch (e) {
-      console.warn('[LiveChatPhrases] 設定を保存できませんでした', e);
+      console.warn('[MkLiveChatPhrases] 設定を保存できませんでした', e);
       failed = true;
     }
   }
