@@ -8,7 +8,11 @@ import type { PhraseData } from '../../lib/model/types';
 import type { DataError } from '../../lib/model/validate';
 
 /** 右側で編集しているもの */
-export type Selection = { kind: 'global' } | { kind: 'group'; id: string } | { kind: 'channel'; id: string };
+export type Selection =
+  | { kind: 'global' }
+  | { kind: 'settings' }
+  | { kind: 'group'; id: string }
+  | { kind: 'channel'; id: string };
 
 export const editor = $state({
   /** 編集中のデータ（下書き）。読み込むまでは null */

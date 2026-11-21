@@ -1,10 +1,17 @@
-/* 編集画面の全体の見た目。飾りは付けず、シンプルにする（色はブラウザのライト / ダークに合わせる） */
+/*
+ * 編集画面の全体の見た目。飾りは付けず、シンプルにする（色はブラウザのライト / ダークに合わせる）
+ * ただし、ボタンと入力欄と文字は見分けられるようにする
+ *   ボタン: 塗り + 薄い影 / 入力欄: 枠線 / 一覧の項目: 塗りなし（マウスを乗せると背景）
+ */
 :root {
   color-scheme: light dark;
   --bg: #ffffff;
   --fg: #0f0f0f;
   --muted: #606060;
   --border: #d0d0d0;
+  --input-border: #a8a8a8;
+  --button-bg: #eeeeee;
+  --button-hover: #e0e0e0;
   --hover: #f0f0f0;
   --selected: #e3eefc;
   --accent: #3ea6ff;
@@ -20,6 +27,9 @@
     --fg: #f1f1f1;
     --muted: #aaaaaa;
     --border: #3f3f3f;
+    --input-border: #5f5f5f;
+    --button-bg: #303030;
+    --button-hover: #3d3d3d;
     --hover: #2a2a2a;
     --selected: #263850;
   }
@@ -48,25 +58,50 @@ button {
   color: inherit;
 }
 
+/* 入力欄: 枠線をはっきり */
 input,
 select {
   padding: 4px 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--input-border);
   border-radius: 4px;
   background: var(--bg);
   min-width: 0;
 }
 
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+input[type='checkbox'] {
+  padding: 0;
+  box-shadow: none;
+}
+
+/* ボタン: 塗り + 薄い影 */
 button {
   padding: 4px 12px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   border-radius: 4px;
-  background: var(--bg);
+  background: var(--button-bg);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
   cursor: pointer;
 }
 
 button:hover:not(:disabled) {
-  background: var(--hover);
+  background: var(--button-hover);
+}
+
+button:active:not(:disabled) {
+  box-shadow: none;
+  transform: translateY(1px);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 button:disabled {
@@ -75,7 +110,6 @@ button:disabled {
 }
 
 button.primary {
-  border-color: var(--accent);
   background: var(--accent);
   color: #ffffff;
 }
@@ -83,4 +117,17 @@ button.primary {
 button.primary:hover:not(:disabled) {
   background: var(--accent);
   filter: brightness(1.1);
+}
+
+/* 削除など、取り消せない操作 */
+button.danger {
+  border-color: var(--danger);
+  background: transparent;
+  color: var(--danger);
+  box-shadow: none;
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--danger);
+  color: #ffffff;
 }

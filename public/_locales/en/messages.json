@@ -97,6 +97,13 @@
   "reloadDiscard": { "message": "Reload", "description": "Editor: button to reload the stored data" },
   "discardConfirm": { "message": "Your unsaved changes will be lost. Continue?", "description": "Editor: confirmation before reloading" },
 
+  "settings": { "message": "Settings", "description": "Editor: settings (tab)" },
+  "phrasesTab": { "message": "Phrases", "description": "Editor: tab of the phrase list" },
+  "globalPhrasesLong": { "message": "All channels", "description": "Editor: row for phrases shared by all channels" },
+  "modsHeading": { "message": "Mods", "description": "Editor: heading of the mods setting" },
+  "modsHelp": { "message": "Choose which mods to show in the menu. Changes take effect immediately.", "description": "Editor: help text of the mods setting" },
+  "settingsSaveFailed": { "message": "Could not save the settings.", "description": "Editor: shown when settings could not be saved" },
+
   "globalPhrases": { "message": "All channels", "description": "Editor: phrases shared by all channels" },
   "globalPhrasesHelp": { "message": "Shown first in the menu on every channel.", "description": "Editor: help text for shared phrases" },
   "ungrouped": { "message": "No group", "description": "Editor: channels not in any group" },

@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { afterCopy, applyMods, MODS, toggleMod, type Mod } from '../lib/mods';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { fakeBrowser } from 'wxt/testing/fake-browser';
+import { createEmptyData } from '../lib/model/types';
+import { afterCopy, applyMods, enabledMods, MODS, toggleMod, type Mod } from '../lib/mods';
+import { loadSettings, saveSettings } from '../lib/storage/settings';
+import { saveData } from '../lib/storage/sync';
 import { dotsMod } from '../lib/mods/dots';
 import { repeat2Mod, repeat3Mod } from '../lib/mods/repeat';
 import { reverseMod, reverseText } from '../lib/mods/reverse';
@@ -11,6 +15,32 @@ describe('mod の一覧', () => {
   it('id が重ならない', () => {
     const ids = MODS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+  it('無効にした mod を除き、MODS の順のまま返す', () => {
+    expect(enabledMods([repeat2Mod.id], [reverseMod, repeat2Mod, dotMod])).toEqual([reverseMod, dotMod]);
+    expect(enabledMods(['unknown'], [reverseMod])).toEqual([reverseMod]); // 知らない id は無視
+  });
+});
+
+describe('設定の保存と読み込み', () => {
+  beforeEach(() => fakeBrowser.reset());
+
+  it('何も保存されていなければ、すべての mod が有効', async () => {
+    expect(await loadSettings()).toEqual({ disabledMods: [] });
+  });
+
+  it('保存したものを読める。形が違えば初期値にする', async () => {
+    await saveSettings({ disabledMods: ['reverse'] });
+    expect(await loadSettings()).toEqual({ disabledMods: ['reverse'] });
+    await fakeBrowser.storage.sync.set({ settings: { disabledMods: 'broken' } });
+    expect(await loadSettings()).toEqual({ disabledMods: [] });
+  });
+
+  it('フレーズのデータを保存しても、設定は消えない', async () => {
+    await saveSettings({ disabledMods: ['reverse'] });
+    const r = await saveData(createEmptyData());
+    expect(r.ok).toBe(true);
+    expect(await loadSettings()).toEqual({ disabledMods: ['reverse'] });
   });
 });
 

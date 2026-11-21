@@ -27,6 +27,7 @@
   import { errorMessages } from './errors';
   import GroupEditor from './GroupEditor.svelte';
   import PhraseList from './PhraseList.svelte';
+  import SettingsEditor from './SettingsEditor.svelte';
   import Sidebar from './Sidebar.svelte';
   import { editor } from './state.svelte';
 
@@ -248,6 +249,8 @@
         {#key editor.selection.id}<ChannelEditor id={editor.selection.id} />{/key}
       {:else if editor.selection.kind === 'group'}
         {#key editor.selection.id}<GroupEditor id={editor.selection.id} />{/key}
+      {:else if editor.selection.kind === 'settings'}
+        <SettingsEditor />
       {:else}
         <h2>{t('globalPhrases')}</h2>
         <p class="muted">{t('globalPhrasesHelp')}</p>

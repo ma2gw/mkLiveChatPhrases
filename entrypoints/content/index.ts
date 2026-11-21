@@ -7,6 +7,7 @@
 import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
 import { addPhraseToChannel } from '../../lib/model/edit';
 import { findChannel } from '../../lib/model/match';
+import { loadSettings, watchSettings } from '../../lib/storage/settings';
 import { NewerSchemaVersionError, loadData, saveData, watchData } from '../../lib/storage/sync';
 import { createMenu, type MenuHandlers, type MenuState } from './menu';
 import styleText from './style.css?inline';
@@ -95,6 +96,10 @@ export default defineContentScript({
     // 編集画面や別の PC でデータが変わったら、メニューに反映する
     const stopWatching = watchData((d) => void applyLoaded(Promise.resolve(d)));
     ctx.onInvalidated(stopWatching);
+
+    // 設定（無効にした mod）を反映し、編集画面や別の PC で変わったら反映し直す
+    void loadSettings().then((s) => menu.setDisabledMods(s.disabledMods));
+    ctx.onInvalidated(watchSettings((s) => menu.setDisabledMods(s.disabledMods)));
 
     watchPage(ctx, refresh);
   },

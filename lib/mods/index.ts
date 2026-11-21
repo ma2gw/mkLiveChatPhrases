@@ -19,6 +19,11 @@ export const MODS: readonly Mod[] = [
   dotsMod(1),
 ];
 
+/** 無効にされていない mod（設定の disabledMods に入っていないもの）を、MODS の順で返す */
+export function enabledMods(disabled: readonly string[], mods: readonly Mod[] = MODS): Mod[] {
+  return mods.filter((m) => !disabled.includes(m.id));
+}
+
 /** オンになっている mod を、MODS の順にかける */
 export function applyMods(text: string, active: ReadonlySet<string>, mods: readonly Mod[] = MODS): string {
   return mods.reduce((s, mod) => (active.has(mod.id) ? mod.apply(s) : s), text);

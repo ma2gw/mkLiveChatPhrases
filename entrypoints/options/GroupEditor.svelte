@@ -26,7 +26,7 @@
   </div>
   <p class="muted">{t('channelCount', String(group.channelIds.length))}</p>
   <div class="danger">
-    <button type="button" onclick={remove}>{t('deleteGroup')}</button>
+    <button type="button" class="danger" onclick={remove}>{t('deleteGroup')}</button>
   </div>
 {/if}
 

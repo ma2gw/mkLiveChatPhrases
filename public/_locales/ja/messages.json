@@ -97,6 +97,13 @@
   "reloadDiscard": { "message": "読み込み直す", "description": "編集画面: 保存されているデータを読み込み直すボタン" },
   "discardConfirm": { "message": "保存していない変更は消えます。よろしいですか？", "description": "編集画面: 読み込み直す前の確認" },
 
+  "settings": { "message": "設定", "description": "編集画面: 設定（タブ）" },
+  "phrasesTab": { "message": "フレーズ", "description": "編集画面: フレーズの一覧のタブ" },
+  "globalPhrasesLong": { "message": "全チャンネル共通", "description": "編集画面: 一覧の、共通フレーズの行" },
+  "modsHeading": { "message": "mod", "description": "編集画面: 設定の mod の見出し" },
+  "modsHelp": { "message": "メニューに表示する mod を選びます。変更はすぐに反映されます。", "description": "編集画面: 設定の mod の説明" },
+  "settingsSaveFailed": { "message": "設定を保存できませんでした。", "description": "編集画面: 設定を保存できなかったとき" },
+
   "globalPhrases": { "message": "共通", "description": "編集画面: 全チャンネル共通のフレーズ" },
   "globalPhrasesHelp": { "message": "どのチャンネルでも、メニューの最初に表示します。", "description": "編集画面: 共通のフレーズの説明" },
   "ungrouped": { "message": "グループなし", "description": "編集画面: どのグループにも入っていないチャンネル" },

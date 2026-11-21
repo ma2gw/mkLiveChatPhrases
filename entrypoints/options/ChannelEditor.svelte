@@ -57,7 +57,7 @@
   <PhraseList phrases={channel.phrases} list={id} />
 
   <div class="danger">
-    <button type="button" onclick={remove}>{t('deleteChannel')}</button>
+    <button type="button" class="danger" onclick={remove}>{t('deleteChannel')}</button>
   </div>
 {/if}
 

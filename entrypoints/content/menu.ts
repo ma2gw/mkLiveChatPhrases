@@ -15,7 +15,7 @@
 import { findChannel, type PageChannel } from '../../lib/model/match';
 import { channelDisplayName, type Phrase, type PhraseData } from '../../lib/model/types';
 import { t } from '../../lib/i18n';
-import { afterCopy, applyMods, MODS, toggleMod } from '../../lib/mods';
+import { afterCopy, applyMods, enabledMods, MODS, toggleMod, type Mod } from '../../lib/mods';
 import { copyText } from './clipboard';
 import { DEFAULT_WIDGET, loadWidgetState, saveWidgetState, type WidgetState } from './widgetState';
 
@@ -79,7 +79,12 @@ const ICON_COLLAPSE = 'M5 11h14v2H5z';
 /** 編集（鉛筆） */
 const ICON_EDIT = 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z';
 
-export function createMenu(container: HTMLElement, handlers: MenuHandlers): { update(state: MenuState): void } {
+export interface Menu {
+  update(state: MenuState): void;
+  setDisabledMods(disabled: readonly string[]): void;
+}
+
+export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu {
   // ---------------------------------------------------------------------------
   // 要素
   // ---------------------------------------------------------------------------
@@ -111,20 +116,9 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): { up
   header.append(channelArea, edit, collapse);
   const body = el('div', 'lcp-body');
 
-  // コピーボタンの並びの下の行: mod の切り替え（オンのときは色が付く）
+  // コピーボタンの並びの下の行: mod の切り替え（オンのときは色が付く）。中身は renderModBar で作る
   const modBar = el('div', 'lcp-mods');
   const modButtons = new Map<string, HTMLButtonElement>();
-  for (const mod of MODS) {
-    const label = t(mod.messageKey);
-    // 1 回でオフに戻る mod は、オンのときの色を変える
-    const button = el('button', mod.once ? 'lcp-mod lcp-mod-once' : 'lcp-mod', mod.label);
-    button.type = 'button';
-    button.setAttribute('aria-label', label);
-    button.setAttribute('aria-pressed', 'false');
-    button.title = label;
-    modButtons.set(mod.id, button);
-    modBar.append(button);
-  }
 
   const status = el('div', 'lcp-status');
   status.setAttribute('aria-live', 'polite');
@@ -213,16 +207,32 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): { up
 
   // オンになっている mod の id。保存はしない（ページを読み込み直したらオフに戻る）
   let activeMods: ReadonlySet<string> = new Set();
-  for (const [id, button] of modButtons) {
-    button.addEventListener('click', () => {
-      // 同じ group のほかの mod は toggleMod がオフにする
-      setActiveMods(toggleMod(activeMods, id));
-    });
-  }
   function setActiveMods(next: ReadonlySet<string>) {
     activeMods = next;
     for (const [id, button] of modButtons) button.setAttribute('aria-pressed', String(activeMods.has(id)));
   }
+
+  /** 有効な mod のボタンを並べ直す（設定で無効にした mod は出さない。1 つもなければ行ごと隠す） */
+  function renderModBar(mods: readonly Mod[]) {
+    modButtons.clear();
+    modBar.replaceChildren();
+    for (const mod of mods) {
+      const label = t(mod.messageKey);
+      // 1 回でオフに戻る mod は、オンのときの色を変える
+      const button = el('button', mod.once ? 'lcp-mod lcp-mod-once' : 'lcp-mod', mod.label);
+      button.type = 'button';
+      button.setAttribute('aria-label', label);
+      button.title = label;
+      // 同じ group のほかの mod は toggleMod がオフにする
+      button.addEventListener('click', () => setActiveMods(toggleMod(activeMods, mod.id)));
+      modButtons.set(mod.id, button);
+      modBar.append(button);
+    }
+    modBar.hidden = mods.length === 0;
+    // 無効にされた mod がオンのまま残らないようにする
+    setActiveMods(new Set([...activeMods].filter((id) => modButtons.has(id))));
+  }
+  renderModBar(MODS);
 
   void loadWidgetState().then((saved) => {
     widget = saved;
@@ -459,6 +469,12 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): { up
       applyVisibility();
       if (widget.open) render(wasHidden);
       if (wasHidden && !root.hidden) place();
+    },
+    /** 設定で無効にした mod を反映する */
+    setDisabledMods(disabled: readonly string[]) {
+      renderModBar(enabledMods(disabled));
+      // 行が増えたり減ったりして、はみ出すことがある
+      if (widget.open) place();
     },
   };
 }
