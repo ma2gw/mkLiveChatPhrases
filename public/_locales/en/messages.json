@@ -6,5 +6,45 @@
   "extDescription": {
     "message": "Copy your saved phrases for live chat with one click.",
     "description": "Extension description"
+  },
+  "openMenu": {
+    "message": "Phrases",
+    "description": "Tooltip and label of the floating icon"
+  },
+  "sectionGlobal": {
+    "message": "All channels",
+    "description": "Menu section for phrases shared by all channels"
+  },
+  "sectionChannel": {
+    "message": "This channel",
+    "description": "Menu section for phrases of the current channel"
+  },
+  "notRegistered": {
+    "message": "Not registered",
+    "description": "Badge shown when the current channel is not registered"
+  },
+  "channelUnknown": {
+    "message": "Channel not detected",
+    "description": "Shown when the channel of the current video cannot be detected"
+  },
+  "noPhrases": {
+    "message": "No phrases yet. Add some in the editor.",
+    "description": "Shown when there are no phrases to show"
+  },
+  "copied": {
+    "message": "Copied",
+    "description": "Status after copying a phrase"
+  },
+  "copyFailed": {
+    "message": "Could not copy. Click the page and try again.",
+    "description": "Status when copying to the clipboard failed"
+  },
+  "errorNewerVersion": {
+    "message": "Your data was saved by a newer version of this extension. Please update the extension.",
+    "description": "Shown when stored data has a newer schema version"
+  },
+  "errorLoadFailed": {
+    "message": "Could not load your phrases.",
+    "description": "Shown when stored data cannot be loaded"
   }
 }

@@ -6,5 +6,45 @@
   "extDescription": {
     "message": "ライブチャット用の定型文をワンクリックでコピーします。",
     "description": "拡張機能の説明"
+  },
+  "openMenu": {
+    "message": "定型文",
+    "description": "フローティングアイコンのツールチップとラベル"
+  },
+  "sectionGlobal": {
+    "message": "全チャンネル共通",
+    "description": "メニューの、共通フレーズの見出し"
+  },
+  "sectionChannel": {
+    "message": "このチャンネル",
+    "description": "メニューの、今のチャンネルのフレーズの見出し"
+  },
+  "notRegistered": {
+    "message": "未登録",
+    "description": "今のチャンネルが登録されていないときのバッジ"
+  },
+  "channelUnknown": {
+    "message": "チャンネルを判定できません",
+    "description": "動画のチャンネルが分からないときの表示"
+  },
+  "noPhrases": {
+    "message": "定型文がまだありません。編集画面で追加してください。",
+    "description": "表示するフレーズがないときの表示"
+  },
+  "copied": {
+    "message": "コピーしました",
+    "description": "コピーしたあとの表示"
+  },
+  "copyFailed": {
+    "message": "コピーできませんでした。ページをクリックしてからもう一度試してください。",
+    "description": "クリップボードへのコピーに失敗したときの表示"
+  },
+  "errorNewerVersion": {
+    "message": "新しいバージョンの拡張機能で保存されたデータです。拡張機能を更新してください。",
+    "description": "保存されたデータの schemaVersion が新しいときの表示"
+  },
+  "errorLoadFailed": {
+    "message": "定型文を読み込めませんでした。",
+    "description": "保存されたデータを読めなかったときの表示"
   }
 }

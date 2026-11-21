@@ -1,0 +1,167 @@
+/* フローティングメニュー（Shadow DOM の中なので YouTube の CSS とは混ざらない） */
+
+[hidden] {
+  display: none !important;
+}
+
+.lcp {
+  --lcp-bg: #ffffff;
+  --lcp-fg: #0f0f0f;
+  --lcp-muted: #606060;
+  --lcp-border: #d9d9d9;
+  --lcp-button-bg: #f2f2f2;
+  --lcp-button-hover: #e5e5e5;
+  --lcp-accent: #3ea6ff;
+  --lcp-ok: #2e9d5b;
+  --lcp-ng: #d93025;
+  font-family: Roboto, 'Noto Sans JP', Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--lcp-fg);
+}
+
+.lcp.lcp-dark {
+  --lcp-bg: #212121;
+  --lcp-fg: #f1f1f1;
+  --lcp-muted: #aaaaaa;
+  --lcp-border: #3f3f3f;
+  --lcp-button-bg: #303030;
+  --lcp-button-hover: #3d3d3d;
+}
+
+.lcp-icon {
+  position: fixed;
+  z-index: 2147483000;
+  width: 40px;
+  height: 40px;
+  padding: 8px;
+  border: 1px solid var(--lcp-border);
+  border-radius: 50%;
+  background: var(--lcp-bg);
+  color: var(--lcp-fg);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.lcp-icon:hover {
+  background: var(--lcp-button-hover);
+}
+
+.lcp-icon:focus-visible,
+.lcp-phrase:focus-visible {
+  outline: 2px solid var(--lcp-accent);
+  outline-offset: 2px;
+}
+
+.lcp-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lcp-panel {
+  position: fixed;
+  z-index: 2147483001;
+  width: 320px;
+  max-width: calc(100vw - 16px);
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--lcp-border);
+  border-radius: 12px;
+  background: var(--lcp-bg);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
+  box-sizing: border-box;
+}
+
+.lcp-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.lcp-channel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lcp-muted {
+  color: var(--lcp-muted);
+  font-weight: normal;
+}
+
+.lcp-badge {
+  flex: none;
+  padding: 1px 6px;
+  border: 1px solid var(--lcp-border);
+  border-radius: 8px;
+  color: var(--lcp-muted);
+  font-size: 11px;
+  font-weight: normal;
+}
+
+.lcp-section + .lcp-section {
+  margin-top: 10px;
+}
+
+.lcp-section-title {
+  margin: 0 0 4px;
+  color: var(--lcp-muted);
+  font-size: 11px;
+  font-weight: normal;
+}
+
+.lcp-phrases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lcp-phrase {
+  max-width: 100%;
+  padding: 4px 10px;
+  border: 1px solid var(--lcp-border);
+  border-radius: 14px;
+  background: var(--lcp-button-bg);
+  color: var(--lcp-fg);
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 0.15s;
+}
+
+.lcp-phrase:hover {
+  background: var(--lcp-button-hover);
+}
+
+.lcp-phrase.lcp-copied {
+  border-color: var(--lcp-ok);
+  background: var(--lcp-ok);
+  color: #ffffff;
+}
+
+.lcp-phrase.lcp-failed {
+  border-color: var(--lcp-ng);
+  background: var(--lcp-ng);
+  color: #ffffff;
+}
+
+.lcp-message {
+  margin: 0;
+  color: var(--lcp-muted);
+}
+
+.lcp-status {
+  margin-top: 8px;
+  color: var(--lcp-muted);
+  font-size: 11px;
+  min-height: 1em;
+}
