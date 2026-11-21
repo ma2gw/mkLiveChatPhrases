@@ -1,0 +1,10 @@
+{
+  "extName": {
+    "message": "Live Chat Phrases",
+    "description": "Extension name (placeholder)"
+  },
+  "extDescription": {
+    "message": "Copy your saved phrases for live chat with one click.",
+    "description": "Extension description"
+  }
+}
