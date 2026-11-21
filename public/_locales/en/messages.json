@@ -11,6 +11,22 @@
     "message": "Phrases",
     "description": "Tooltip and label of the floating icon"
   },
+  "reverse": {
+    "message": "Copy reversed",
+    "description": "Tooltip and label of the reverse button"
+  },
+  "repeat2": {
+    "message": "Copy repeated twice",
+    "description": "Tooltip and label of the ×2 button"
+  },
+  "repeat3": {
+    "message": "Copy repeated three times",
+    "description": "Tooltip and label of the ×3 button"
+  },
+  "appendDot": {
+    "message": "Copy with a period at the end",
+    "description": "Tooltip and label of the toggle that appends a period to copied text"
+  },
   "collapseMenu": {
     "message": "Collapse",
     "description": "Tooltip and label of the button that collapses the menu back to the icon"
@@ -24,8 +40,28 @@
     "description": "Shown when the channel of the current video cannot be detected"
   },
   "noPhrases": {
-    "message": "No phrases yet. Add some in the editor.",
+    "message": "No phrases yet.",
     "description": "Shown when there are no phrases to show"
+  },
+  "addPhrase": {
+    "message": "Add a phrase to this channel",
+    "description": "Tooltip and label of the + button and its input"
+  },
+  "addPhrasePlaceholder": {
+    "message": "Text to copy (press ✓ to add)",
+    "description": "Placeholder of the input shown after pressing +"
+  },
+  "addConfirm": {
+    "message": "Add",
+    "description": "Tooltip and label of the ✓ button next to the input"
+  },
+  "addCancel": {
+    "message": "Cancel (Esc)",
+    "description": "Tooltip and label of the × button next to the input"
+  },
+  "addFailed": {
+    "message": "Could not add the phrase.",
+    "description": "Shown when a phrase could not be saved"
   },
   "copyFailed": {
     "message": "Could not copy. Click the page and try again.",

@@ -5,8 +5,9 @@
  * そのため youtube.com のすべてのページで動かし、メニューを出すかどうかは URL を見て決める
  */
 import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
-import { NewerSchemaVersionError, loadData, watchData } from '../../lib/storage/sync';
-import { createMenu, type MenuState } from './menu';
+import { addPhraseToChannel } from '../../lib/model/edit';
+import { NewerSchemaVersionError, loadData, saveData, watchData } from '../../lib/storage/sync';
+import { createMenu, type MenuHandlers, type MenuState } from './menu';
 import styleText from './style.css?inline';
 import { getPageChannel, isTargetPage, watchPage } from './youtube';
 
@@ -20,6 +21,29 @@ export default defineContentScript({
     let data: MenuState['data'] = null;
     let loadError: MenuState['loadError'];
 
+    const handlers: MenuHandlers = {
+      async onAddPhrase(text) {
+        const page = getPageChannel();
+        if (!page) return false;
+        try {
+          // 別のタブや PC での変更を消さないように、保存されている最新のデータに追加する
+          const next = addPhraseToChannel(await loadData(), page, text);
+          if (!next) return false;
+          const result = await saveData(next);
+          if (!result.ok) {
+            console.warn('[LiveChatPhrases] 追加できませんでした', result.errors);
+            return false;
+          }
+          data = next;
+          refresh();
+          return true;
+        } catch (e) {
+          console.warn('[LiveChatPhrases] 追加できませんでした', e);
+          return false;
+        }
+      },
+    };
+
     const ui = await createShadowRootUi(ctx, {
       name: 'live-chat-phrases',
       position: 'inline',
@@ -27,7 +51,7 @@ export default defineContentScript({
       css: styleText,
       // メニューの中のキー操作が YouTube のショートカットに届かないようにする
       isolateEvents: true,
-      onMount: (container) => createMenu(container),
+      onMount: (container) => createMenu(container, handlers),
     });
     ui.mount();
     const menu = ui.mounted;

@@ -11,6 +11,22 @@
     "message": "定型文",
     "description": "フローティングアイコンのツールチップとラベル"
   },
+  "reverse": {
+    "message": "逆順でコピー",
+    "description": "逆順ボタンのツールチップとラベル"
+  },
+  "repeat2": {
+    "message": "2 回繰り返してコピー",
+    "description": "×2 ボタンのツールチップとラベル"
+  },
+  "repeat3": {
+    "message": "3 回繰り返してコピー",
+    "description": "×3 ボタンのツールチップとラベル"
+  },
+  "appendDot": {
+    "message": "末尾にドットを付けてコピー",
+    "description": "コピーする文字列の末尾にドットを付ける切り替えのツールチップとラベル"
+  },
   "collapseMenu": {
     "message": "格納する",
     "description": "メニューをアイコンに戻すボタンのツールチップとラベル"
@@ -24,8 +40,28 @@
     "description": "動画のチャンネルが分からないときの表示"
   },
   "noPhrases": {
-    "message": "定型文がまだありません。編集画面で追加してください。",
+    "message": "定型文がまだありません。",
     "description": "表示するフレーズがないときの表示"
+  },
+  "addPhrase": {
+    "message": "このチャンネルに定型文を追加",
+    "description": "+ ボタンと入力欄のツールチップとラベル"
+  },
+  "addPhrasePlaceholder": {
+    "message": "コピーする文字列（✓ で追加）",
+    "description": "+ を押したときの入力欄のプレースホルダー"
+  },
+  "addConfirm": {
+    "message": "追加する",
+    "description": "入力欄の横の ✓ ボタンのツールチップとラベル"
+  },
+  "addCancel": {
+    "message": "やめる（Esc）",
+    "description": "入力欄の横の × ボタンのツールチップとラベル"
+  },
+  "addFailed": {
+    "message": "追加できませんでした。",
+    "description": "フレーズを保存できなかったときの表示"
   },
   "copyFailed": {
     "message": "コピーできませんでした。ページをクリックしてからもう一度試してください。",

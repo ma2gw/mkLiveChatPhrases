@@ -8,9 +8,13 @@
  * - 開いていても閉じていても、全体をドラッグで動かせる（フレーズと格納ボタンはクリックを優先）
  * - 位置と開閉の状態は保存し、読み込み直しても同じ状態で表示する
  * - フレーズは「共通 → チャンネル」の順に並べ、クリックでクリップボードにコピーする
+ * - コピーボタンの並びの下の行で mod を切り替える。オンの mod をかけてからコピーする（状態は保存しない）
+ *   mod の一覧と中身は lib/mods/
+ * - 並びの最後の + で、このチャンネルにフレーズを追加できる（ラベルなし。未登録ならチャンネルも登録する）
  */
 import { findChannel, type PageChannel } from '../../lib/model/match';
 import { channelDisplayName, type Phrase, type PhraseData } from '../../lib/model/types';
+import { afterCopy, applyMods, MODS, toggleMod } from '../../lib/mods';
 import { copyText } from './clipboard';
 import { DEFAULT_WIDGET, loadWidgetState, saveWidgetState, type WidgetState } from './widgetState';
 
@@ -25,6 +29,11 @@ export interface MenuState {
   loadError?: 'newerSchemaVersion' | 'loadFailed';
 }
 
+export interface MenuHandlers {
+  /** + から入力された文字列を、見ているチャンネルに追加して保存する。保存できたら true */
+  onAddPhrase(text: string): Promise<boolean>;
+}
+
 /** メニューが広がる向き */
 interface Direction {
   h: 'left' | 'right';
@@ -36,7 +45,7 @@ const MARGIN = 8;
 const DRAG_THRESHOLD = 4;
 const FLASH_MS = 600;
 /** ドラッグを始めない要素（クリックを優先する） */
-const NO_DRAG = '.lcp-phrase, .lcp-collapse';
+const NO_DRAG = '.lcp-phrase, .lcp-collapse, .lcp-mod, .lcp-add, .lcp-add-form';
 
 // public/_locales/{en,ja}/messages.json から文言を引く
 function t(key: string): string {
@@ -67,7 +76,7 @@ const ICON_CHAT = 'M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-
 /** 格納（横棒） */
 const ICON_COLLAPSE = 'M5 11h14v2H5z';
 
-export function createMenu(container: HTMLElement): { update(state: MenuState): void } {
+export function createMenu(container: HTMLElement, handlers: MenuHandlers): { update(state: MenuState): void } {
   // ---------------------------------------------------------------------------
   // 要素
   // ---------------------------------------------------------------------------
@@ -92,9 +101,25 @@ export function createMenu(container: HTMLElement): { update(state: MenuState): 
   collapse.appendChild(svgIcon(ICON_COLLAPSE));
   header.append(channelArea, collapse);
   const body = el('div', 'lcp-body');
+
+  // コピーボタンの並びの下の行: mod の切り替え（オンのときは色が付く）
+  const modBar = el('div', 'lcp-mods');
+  const modButtons = new Map<string, HTMLButtonElement>();
+  for (const mod of MODS) {
+    const label = t(mod.messageKey);
+    // 1 回でオフに戻る mod は、オンのときの色を変える
+    const button = el('button', mod.once ? 'lcp-mod lcp-mod-once' : 'lcp-mod', mod.label);
+    button.type = 'button';
+    button.setAttribute('aria-label', label);
+    button.setAttribute('aria-pressed', 'false');
+    button.title = label;
+    modButtons.set(mod.id, button);
+    modBar.append(button);
+  }
+
   const status = el('div', 'lcp-status');
   status.setAttribute('aria-live', 'polite');
-  panel.append(header, body, status);
+  panel.append(header, body, modBar, status);
 
   root.append(icon, panel);
   container.appendChild(root);
@@ -177,6 +202,19 @@ export function createMenu(container: HTMLElement): { update(state: MenuState): 
     void saveWidgetState(widget);
   };
 
+  // オンになっている mod の id。保存はしない（ページを読み込み直したらオフに戻る）
+  let activeMods: ReadonlySet<string> = new Set();
+  for (const [id, button] of modButtons) {
+    button.addEventListener('click', () => {
+      // 同じ group のほかの mod は toggleMod がオフにする
+      setActiveMods(toggleMod(activeMods, id));
+    });
+  }
+  function setActiveMods(next: ReadonlySet<string>) {
+    activeMods = next;
+    for (const [id, button] of modButtons) button.setAttribute('aria-pressed', String(activeMods.has(id)));
+  }
+
   void loadWidgetState().then((saved) => {
     widget = saved;
     dir = directionFromIcon();
@@ -243,7 +281,9 @@ export function createMenu(container: HTMLElement): { update(state: MenuState): 
     button.type = 'button';
     button.title = phrase.text;
     button.addEventListener('click', async () => {
-      const ok = await copyText(phrase.text, root);
+      const ok = await copyText(applyMods(phrase.text, activeMods), root);
+      // 1 回だけの mod（once）は、コピーできたらオフに戻す
+      if (ok) setActiveMods(afterCopy(activeMods));
       button.classList.remove('lcp-copied', 'lcp-failed');
       button.classList.add(ok ? 'lcp-copied' : 'lcp-failed');
       // うまくいったときはボタンの色だけで知らせる。失敗したときは、どうすればよいかを出す
@@ -253,6 +293,97 @@ export function createMenu(container: HTMLElement): { update(state: MenuState): 
     return button;
   };
 
+  // ---------------------------------------------------------------------------
+  // + でフレーズを追加する
+  // ---------------------------------------------------------------------------
+
+  /** 入力中の文字列。入力欄を出していないときは null */
+  let draft: string | null = null;
+  /** 入力欄を開いたときのチャンネル。別のチャンネルに移ったら入力をやめる */
+  let draftPageKey = '';
+  let saving = false;
+
+  const closeAdd = () => {
+    draft = null;
+    render(true);
+  };
+
+  const submitAdd = async (form: HTMLElement, input: HTMLInputElement) => {
+    if (saving) return;
+    // 何も入力されていなければ（空白だけでも）、何もせずに閉じる
+    if (!input.value.trim()) {
+      closeAdd();
+      return;
+    }
+    saving = true;
+    const controls = form.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input, button');
+    controls.forEach((c) => (c.disabled = true));
+    const ok = await handlers.onAddPhrase(input.value);
+    saving = false;
+    if (ok) {
+      closeAdd();
+    } else {
+      controls.forEach((c) => (c.disabled = false));
+      input.focus();
+      status.textContent = t('addFailed');
+    }
+  };
+
+  /** 入力欄の横の小さなボタン（✓ / ×） */
+  const formButton = (className: string, text: string, label: string, onClick: () => void) => {
+    const button = el('button', className, text);
+    button.type = 'button';
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    button.disabled = saving;
+    button.addEventListener('click', onClick);
+    return button;
+  };
+
+  /** フレーズの並びの最後に置く、+ ボタンまたは入力欄（✓ で追加、× か Esc でやめる） */
+  const addControl = (): HTMLElement => {
+    if (draft === null) {
+      const button = el('button', 'lcp-add', '+');
+      button.type = 'button';
+      button.title = t('addPhrase');
+      button.setAttribute('aria-label', t('addPhrase'));
+      button.addEventListener('click', () => {
+        draft = '';
+        draftPageKey = JSON.stringify(state.page);
+        render(true);
+      });
+      return button;
+    }
+    const form = el('div', 'lcp-add-form');
+    const input = el('input', 'lcp-add-input');
+    input.type = 'text';
+    input.value = draft;
+    input.placeholder = t('addPhrasePlaceholder');
+    input.setAttribute('aria-label', t('addPhrase'));
+    input.disabled = saving;
+    input.addEventListener('input', () => {
+      draft = input.value;
+    });
+    // Enter では追加しない（誤って追加しないように）。追加は ✓ ボタンだけ
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeAdd();
+      }
+    });
+    // 何も入力せずにほかの場所を押したら閉じる（入力途中の文字は消さない。✓ / × に移るときは閉じない）
+    input.addEventListener('blur', (e) => {
+      if (e.relatedTarget instanceof Node && form.contains(e.relatedTarget)) return;
+      if (input.isConnected && !saving && !input.value.trim()) closeAdd();
+    });
+    const confirm = formButton('lcp-add-confirm', '✓', t('addConfirm'), () => void submitAdd(form, input));
+    const cancel = formButton('lcp-add-cancel', '×', t('addCancel'), closeAdd);
+    form.append(input, confirm, cancel);
+    // 作り直したあとも入力を続けられるようにする
+    queueMicrotask(() => input.focus());
+    return form;
+  };
+
   /** メニューの中身を作り直す。中身が変わっていなければ何もしない（コピーした表示が消えないように） */
   const render = (force = false) => {
     const key = JSON.stringify([state.page, state.data, state.loadError]);
@@ -260,6 +391,8 @@ export function createMenu(container: HTMLElement): { update(state: MenuState): 
     renderedKey = key;
 
     const { page, data, loadError } = state;
+    // 別のチャンネルの動画に移ったら、入力途中のものは捨てる（違うチャンネルに追加しないように）
+    if (draft !== null && JSON.stringify(page) !== draftPageKey) draft = null;
     const channel = data && page ? findChannel(data, page) : undefined;
     if (channel) {
       channelArea.replaceChildren(el('span', 'lcp-channel', channelDisplayName(channel)));
@@ -277,13 +410,16 @@ export function createMenu(container: HTMLElement): { update(state: MenuState): 
     } else if (data) {
       // 見出しは付けず、共通 → チャンネルの順に並べるだけ
       const phrases = [...data.globalPhrases, ...(channel?.phrases ?? [])];
-      if (phrases.length > 0) {
+      const children: HTMLElement[] = [];
+      if (phrases.length === 0) children.push(el('p', 'lcp-message', t('noPhrases')));
+      // チャンネルが分からないときは追加できない
+      if (phrases.length > 0 || page) {
         const list = el('div', 'lcp-phrases');
         list.append(...phrases.map(phraseButton));
-        body.replaceChildren(list);
-      } else {
-        body.replaceChildren(el('p', 'lcp-message', t('noPhrases')));
+        if (page) list.append(addControl());
+        children.push(list);
       }
+      body.replaceChildren(...children);
     } else {
       body.replaceChildren();
     }
