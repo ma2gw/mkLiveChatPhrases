@@ -4,6 +4,7 @@
   display: none !important;
 }
 
+/* アイコンとメニューをまとめた部品。位置は menu.ts で right / bottom / left / top を指定する */
 .lcp {
   --lcp-bg: #ffffff;
   --lcp-fg: #0f0f0f;
@@ -14,10 +15,13 @@
   --lcp-accent: #3ea6ff;
   --lcp-ok: #2e9d5b;
   --lcp-ng: #d93025;
+  position: fixed;
+  z-index: 2147483000;
   font-family: Roboto, 'Noto Sans JP', Arial, sans-serif;
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.3;
   color: var(--lcp-fg);
+  touch-action: none;
 }
 
 .lcp.lcp-dark {
@@ -29,9 +33,15 @@
   --lcp-button-hover: #3d3d3d;
 }
 
+.lcp.lcp-dragging,
+.lcp.lcp-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+/* 閉じているときのアイコン */
 .lcp-icon {
-  position: fixed;
-  z-index: 2147483000;
+  display: block;
   width: 40px;
   height: 40px;
   padding: 8px;
@@ -41,7 +51,6 @@
   color: var(--lcp-fg);
   box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
   cursor: pointer;
-  touch-action: none;
   user-select: none;
   box-sizing: border-box;
 }
@@ -51,38 +60,50 @@
 }
 
 .lcp-icon:focus-visible,
+.lcp-collapse:focus-visible,
 .lcp-phrase:focus-visible {
   outline: 2px solid var(--lcp-accent);
   outline-offset: 2px;
 }
 
-.lcp-icon svg {
+.lcp-icon svg,
+.lcp-collapse svg {
   display: block;
   width: 100%;
   height: 100%;
 }
 
+/* 開いているときのメニュー。どこをつかんでもドラッグできる */
 .lcp-panel {
-  position: fixed;
-  z-index: 2147483001;
-  width: 320px;
-  max-width: calc(100vw - 16px);
-  max-height: 60vh;
-  overflow-y: auto;
-  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  width: 360px;
   border: 1px solid var(--lcp-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--lcp-bg);
   box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
   box-sizing: border-box;
+  cursor: grab;
+  overflow: hidden;
 }
 
 .lcp-header {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 6px;
-  margin-bottom: 8px;
+  padding: 2px 2px 2px 8px;
+  border-bottom: 1px solid var(--lcp-border);
   font-weight: bold;
+  user-select: none;
+}
+
+.lcp-channel-area {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 
 .lcp-channel {
@@ -106,15 +127,29 @@
   font-weight: normal;
 }
 
-.lcp-section + .lcp-section {
-  margin-top: 10px;
+.lcp-collapse {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 5px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--lcp-muted);
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
-.lcp-section-title {
-  margin: 0 0 4px;
-  color: var(--lcp-muted);
-  font-size: 11px;
-  font-weight: normal;
+.lcp-collapse:hover {
+  background: var(--lcp-button-hover);
+  color: var(--lcp-fg);
+}
+
+.lcp-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px;
 }
 
 .lcp-phrases {
@@ -125,9 +160,9 @@
 
 .lcp-phrase {
   max-width: 100%;
-  padding: 4px 10px;
+  padding: 4px 8px;
   border: 1px solid var(--lcp-border);
-  border-radius: 14px;
+  border-radius: 4px;
   background: var(--lcp-button-bg);
   color: var(--lcp-fg);
   font: inherit;
@@ -160,8 +195,13 @@
 }
 
 .lcp-status {
-  margin-top: 8px;
-  color: var(--lcp-muted);
+  flex: none;
+  padding: 0 8px 8px;
+  color: var(--lcp-ng);
   font-size: 11px;
-  min-height: 1em;
+}
+
+/* 何も出していないときは場所を取らない */
+.lcp-status:empty {
+  display: none;
 }

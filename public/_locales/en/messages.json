@@ -11,13 +11,9 @@
     "message": "Phrases",
     "description": "Tooltip and label of the floating icon"
   },
-  "sectionGlobal": {
-    "message": "All channels",
-    "description": "Menu section for phrases shared by all channels"
-  },
-  "sectionChannel": {
-    "message": "This channel",
-    "description": "Menu section for phrases of the current channel"
+  "collapseMenu": {
+    "message": "Collapse",
+    "description": "Tooltip and label of the button that collapses the menu back to the icon"
   },
   "notRegistered": {
     "message": "Not registered",
@@ -30,10 +26,6 @@
   "noPhrases": {
     "message": "No phrases yet. Add some in the editor.",
     "description": "Shown when there are no phrases to show"
-  },
-  "copied": {
-    "message": "Copied",
-    "description": "Status after copying a phrase"
   },
   "copyFailed": {
     "message": "Could not copy. Click the page and try again.",

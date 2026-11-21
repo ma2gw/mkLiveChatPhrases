@@ -11,13 +11,9 @@
     "message": "定型文",
     "description": "フローティングアイコンのツールチップとラベル"
   },
-  "sectionGlobal": {
-    "message": "全チャンネル共通",
-    "description": "メニューの、共通フレーズの見出し"
-  },
-  "sectionChannel": {
-    "message": "このチャンネル",
-    "description": "メニューの、今のチャンネルのフレーズの見出し"
+  "collapseMenu": {
+    "message": "格納する",
+    "description": "メニューをアイコンに戻すボタンのツールチップとラベル"
   },
   "notRegistered": {
     "message": "未登録",
@@ -30,10 +26,6 @@
   "noPhrases": {
     "message": "定型文がまだありません。編集画面で追加してください。",
     "description": "表示するフレーズがないときの表示"
-  },
-  "copied": {
-    "message": "コピーしました",
-    "description": "コピーしたあとの表示"
   },
   "copyFailed": {
     "message": "コピーできませんでした。ページをクリックしてからもう一度試してください。",

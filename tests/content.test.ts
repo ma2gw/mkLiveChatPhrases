@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { isTargetPage, parseChannelHref } from '../entrypoints/content/youtube';
 import { findChannel } from '../lib/model/match';
-import { createEmptyData, newId, type Channel } from '../lib/model/types';
+import { channelDisplayName, createEmptyData, newId, type Channel } from '../lib/model/types';
+
+describe('チャンネルの表示名', () => {
+  const base: Channel = { id: 'x', phrases: [] };
+  it('name があれば name', () => {
+    expect(channelDisplayName({ ...base, name: '名前', handle: 'foo' })).toBe('名前');
+  });
+  it('name がなければハンドル', () => {
+    expect(channelDisplayName({ ...base, handle: 'foo', youtubeChannelId: 'UCabcdefghijklmnopqrstuv' })).toBe('@foo');
+  });
+  it('ハンドルもなければ YouTube のチャンネル ID', () => {
+    expect(channelDisplayName({ ...base, youtubeChannelId: 'UCabcdefghijklmnopqrstuv' })).toBe('UCabcdefghijklmnopqrstuv');
+  });
+});
 
 describe('メニューを出すページ', () => {
   it.each([
@@ -31,23 +44,20 @@ describe('チャンネルへのリンクを読む', () => {
 });
 
 describe('登録されたチャンネルを探す', () => {
-  const ch: Channel = {
-    id: newId(),
-    name: 'Foo',
-    handles: ['FooBar', 'foo_alt'],
-    youtubeChannelIds: ['UCabcdefghijklmnopqrstuv'],
-    phrases: [],
-  };
+  const ch: Channel = { id: newId(), handle: 'FooBar', youtubeChannelId: 'UCabcdefghijklmnopqrstuv', phrases: [] };
+  const ucOnly: Channel = { id: newId(), youtubeChannelId: 'UCzzzzzzzzzzzzzzzzzzzzzz', phrases: [] };
   const data = createEmptyData();
-  data.channels[ch.id] = ch;
-  data.ungroupedChannelIds.push(ch.id);
+  for (const c of [ch, ucOnly]) {
+    data.channels[c.id] = c;
+    data.ungroupedChannelIds.push(c.id);
+  }
 
-  it('ハンドルの別名でも、大文字と小文字が違っても見つかる', () => {
+  it('大文字と小文字が違ってもハンドルで見つかる', () => {
     expect(findChannel(data, { handle: 'foobar' })).toBe(ch);
-    expect(findChannel(data, { handle: 'FOO_ALT' })).toBe(ch);
   });
   it('YouTube のチャンネル ID で見つかる', () => {
     expect(findChannel(data, { youtubeChannelId: 'UCabcdefghijklmnopqrstuv' })).toBe(ch);
+    expect(findChannel(data, { youtubeChannelId: 'UCzzzzzzzzzzzzzzzzzzzzzz' })).toBe(ucOnly);
   });
   it('登録されていなければ undefined', () => {
     expect(findChannel(data, { handle: 'other' })).toBeUndefined();

@@ -1,16 +1,21 @@
 /**
  * フローティングメニュー（Shadow DOM の中に作る）
  *
- * - 画面に常に出すアイコン。ドラッグで動かせる。クリックでメニューを開く / 閉じる
- * - メニューには「共通 → チャンネル」の順にフレーズのボタンを並べる。クリックでクリップボードにコピーする
+ * アイコンとメニューは 1 つの部品（root）で、閉じているときはアイコン、開くとメニューになる
+ * - アイコンを押すと、アイコンがあった場所を基準にメニューが広がる
+ *   （アイコンが画面の右寄りなら左へ、下寄りなら上へ広がる）
+ * - 格納ボタンでアイコンに戻る。アイコンは格納ボタンがあった場所に出す
+ * - 開いていても閉じていても、全体をドラッグで動かせる（フレーズと格納ボタンはクリックを優先）
+ * - 位置と開閉の状態は保存し、読み込み直しても同じ状態で表示する
+ * - フレーズは「共通 → チャンネル」の順に並べ、クリックでクリップボードにコピーする
  */
 import { findChannel, type PageChannel } from '../../lib/model/match';
-import type { Phrase, PhraseData } from '../../lib/model/types';
+import { channelDisplayName, type Phrase, type PhraseData } from '../../lib/model/types';
 import { copyText } from './clipboard';
-import { loadPosition, savePosition, type IconPosition } from './position';
+import { DEFAULT_WIDGET, loadWidgetState, saveWidgetState, type WidgetState } from './widgetState';
 
 export interface MenuState {
-  /** アイコンを出すページか */
+  /** メニューを出すページか */
   visible: boolean;
   /** 見ている動画のチャンネル（分からなければ null） */
   page: PageChannel | null;
@@ -20,10 +25,18 @@ export interface MenuState {
   loadError?: 'newerSchemaVersion' | 'loadFailed';
 }
 
+/** メニューが広がる向き */
+interface Direction {
+  h: 'left' | 'right';
+  v: 'up' | 'down';
+}
+
 const ICON_SIZE = 40;
 const MARGIN = 8;
 const DRAG_THRESHOLD = 4;
 const FLASH_MS = 600;
+/** ドラッグを始めない要素（クリックを優先する） */
+const NO_DRAG = '.lcp-phrase, .lcp-collapse';
 
 // public/_locales/{en,ja}/messages.json から文言を引く
 function t(key: string): string {
@@ -37,115 +50,188 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, t
   return e;
 }
 
-/** 吹き出しのアイコン（外部の画像は使わない） */
-function iconSvg(): SVGSVGElement {
+/** 外部の画像は使わず、SVG をその場で作る */
+function svgIcon(d: string): SVGSVGElement {
   const ns = 'http://www.w3.org/2000/svg';
   const svg = document.createElementNS(ns, 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('aria-hidden', 'true');
   const path = document.createElementNS(ns, 'path');
-  path.setAttribute('d', 'M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm3 6v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z');
+  path.setAttribute('d', d);
   path.setAttribute('fill', 'currentColor');
   svg.appendChild(path);
   return svg;
 }
+/** 吹き出し */
+const ICON_CHAT = 'M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm3 6v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z';
+/** 格納（横棒） */
+const ICON_COLLAPSE = 'M5 11h14v2H5z';
 
 export function createMenu(container: HTMLElement): { update(state: MenuState): void } {
+  // ---------------------------------------------------------------------------
+  // 要素
+  // ---------------------------------------------------------------------------
+
   const root = el('div', 'lcp');
+  root.hidden = true; // 保存した位置を読むまでは出さない
+
   const icon = el('button', 'lcp-icon');
   icon.type = 'button';
   icon.setAttribute('aria-label', t('openMenu'));
   icon.title = t('openMenu');
-  icon.appendChild(iconSvg());
+  icon.appendChild(svgIcon(ICON_CHAT));
+
   const panel = el('div', 'lcp-panel');
-  panel.hidden = true;
   panel.setAttribute('role', 'dialog');
+  const header = el('div', 'lcp-header');
+  const channelArea = el('div', 'lcp-channel-area');
+  const collapse = el('button', 'lcp-collapse');
+  collapse.type = 'button';
+  collapse.setAttribute('aria-label', t('collapseMenu'));
+  collapse.title = t('collapseMenu');
+  collapse.appendChild(svgIcon(ICON_COLLAPSE));
+  header.append(channelArea, collapse);
+  const body = el('div', 'lcp-body');
+  const status = el('div', 'lcp-status');
+  status.setAttribute('aria-live', 'polite');
+  panel.append(header, body, status);
+
   root.append(icon, panel);
   container.appendChild(root);
 
   let state: MenuState = { visible: false, page: null, data: null };
+  let widget: WidgetState = { ...DEFAULT_WIDGET };
+  let loaded = false;
+  let dir: Direction = { h: 'left', v: 'up' };
   let renderedKey = '';
-  let position: IconPosition = { right: 24, bottom: 96 };
 
   // ---------------------------------------------------------------------------
   // 位置
   // ---------------------------------------------------------------------------
 
-  const clamp = (p: IconPosition): IconPosition => ({
-    right: Math.min(Math.max(p.right, MARGIN), Math.max(MARGIN, window.innerWidth - ICON_SIZE - MARGIN)),
-    bottom: Math.min(Math.max(p.bottom, MARGIN), Math.max(MARGIN, window.innerHeight - ICON_SIZE - MARGIN)),
-  });
-
-  const applyPosition = () => {
-    const p = clamp(position);
-    icon.style.right = `${p.right}px`;
-    icon.style.bottom = `${p.bottom}px`;
-    if (!panel.hidden) placePanel();
+  /** アイコンの位置から、メニューが広がる向きを決める（画面の広いほうへ） */
+  const directionFromIcon = (): Direction => {
+    const centerX = window.innerWidth - widget.right - ICON_SIZE / 2;
+    const centerY = window.innerHeight - widget.bottom - ICON_SIZE / 2;
+    return {
+      h: centerX > window.innerWidth / 2 ? 'left' : 'right',
+      v: centerY > window.innerHeight / 2 ? 'up' : 'down',
+    };
   };
 
-  /** メニューをアイコンの近くに出す。画面の中央より下なら上に、右なら左に向かって開く */
-  const placePanel = () => {
-    const r = icon.getBoundingClientRect();
-    const s = panel.style;
-    s.top = s.bottom = s.left = s.right = '';
-    if (r.top + r.height / 2 > window.innerHeight / 2) s.bottom = `${window.innerHeight - r.top + MARGIN}px`;
-    else s.top = `${r.bottom + MARGIN}px`;
-    if (r.left + r.width / 2 > window.innerWidth / 2) s.right = `${window.innerWidth - r.right}px`;
-    else s.left = `${r.left}px`;
+  /** widget の位置と開閉の状態を、画面に反映する */
+  const layout = () => {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const s = root.style;
+    s.left = s.right = s.top = s.bottom = '';
+    icon.hidden = widget.open;
+    panel.hidden = !widget.open;
+
+    if (!widget.open) {
+      s.right = `${widget.right}px`;
+      s.bottom = `${widget.bottom}px`;
+      return;
+    }
+    // アイコンの角を基準に広げる
+    if (dir.h === 'left') s.right = `${widget.right}px`;
+    else s.left = `${W - widget.right - ICON_SIZE}px`;
+    if (dir.v === 'up') s.bottom = `${widget.bottom}px`;
+    else s.top = `${H - widget.bottom - ICON_SIZE}px`;
+    // 広がる向きに使える広さまでにする
+    const spaceH = dir.h === 'left' ? W - widget.right - MARGIN : widget.right + ICON_SIZE - MARGIN;
+    const spaceV = dir.v === 'up' ? H - widget.bottom - MARGIN : widget.bottom + ICON_SIZE - MARGIN;
+    panel.style.maxWidth = `${Math.max(ICON_SIZE, spaceH)}px`;
+    panel.style.maxHeight = `${Math.max(ICON_SIZE, Math.min(H * 0.6, spaceV))}px`;
   };
 
-  void loadPosition().then((p) => {
-    position = p;
-    applyPosition();
+  /** 画面からはみ出していたら、はみ出した分だけ戻す */
+  const fitInViewport = () => {
+    // 隠れているときは大きさが 0 になり、正しく測れない
+    if (root.hidden) return;
+    const r = root.getBoundingClientRect();
+    let dx = 0;
+    let dy = 0;
+    if (r.right > window.innerWidth - MARGIN) dx = r.right - (window.innerWidth - MARGIN);
+    if (r.left - dx < MARGIN) dx = r.left - MARGIN;
+    if (r.bottom > window.innerHeight - MARGIN) dy = r.bottom - (window.innerHeight - MARGIN);
+    if (r.top - dy < MARGIN) dy = r.top - MARGIN;
+    if (dx === 0 && dy === 0) return;
+    widget.right += dx;
+    widget.bottom += dy;
+    layout();
+  };
+
+  const place = () => {
+    layout();
+    fitInViewport();
+  };
+
+  const setOpen = (open: boolean) => {
+    if (widget.open === open) return;
+    if (open) dir = directionFromIcon();
+    widget.open = open;
+    icon.setAttribute('aria-expanded', String(open));
+    if (open) render(true);
+    place();
+    void saveWidgetState(widget);
+  };
+
+  void loadWidgetState().then((saved) => {
+    widget = saved;
+    dir = directionFromIcon();
+    loaded = true;
+    if (widget.open) render(true);
+    applyVisibility();
+    place();
   });
-  window.addEventListener('resize', applyPosition);
+  window.addEventListener('resize', place);
 
   // ---------------------------------------------------------------------------
   // ドラッグとクリック
   // ---------------------------------------------------------------------------
 
-  let drag: { x: number; y: number; start: IconPosition; moved: boolean } | null = null;
+  let drag: { x: number; y: number; right: number; bottom: number; moved: boolean } | null = null;
 
-  icon.addEventListener('pointerdown', (e) => {
+  root.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
-    icon.setPointerCapture(e.pointerId);
-    drag = { x: e.clientX, y: e.clientY, start: clamp(position), moved: false };
+    if (e.target instanceof Element && e.target.closest(NO_DRAG)) return;
+    root.setPointerCapture(e.pointerId);
+    drag = { x: e.clientX, y: e.clientY, right: widget.right, bottom: widget.bottom, moved: false };
   });
-  icon.addEventListener('pointermove', (e) => {
+  root.addEventListener('pointermove', (e) => {
     if (!drag) return;
     const dx = e.clientX - drag.x;
     const dy = e.clientY - drag.y;
     if (!drag.moved && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
     drag.moved = true;
-    position = clamp({ right: drag.start.right - dx, bottom: drag.start.bottom - dy });
-    applyPosition();
+    root.classList.add('lcp-dragging');
+    widget.right = drag.right - dx;
+    widget.bottom = drag.bottom - dy;
+    place();
   });
-  icon.addEventListener('pointerup', () => {
+  const endDrag = (clicked: boolean) => {
     if (!drag) return;
     const moved = drag.moved;
     drag = null;
-    if (moved) void savePosition(position);
-    else setOpen(panel.hidden);
-  });
-  icon.addEventListener('pointercancel', () => {
-    drag = null;
-  });
-
-  const setOpen = (open: boolean) => {
-    panel.hidden = !open;
-    icon.setAttribute('aria-expanded', String(open));
-    if (open) {
-      render(true);
-      placePanel();
-    }
+    root.classList.remove('lcp-dragging');
+    if (moved) void saveWidgetState(widget);
+    else if (clicked && !widget.open) setOpen(true);
   };
+  root.addEventListener('pointerup', () => endDrag(true));
+  root.addEventListener('pointercancel', () => endDrag(false));
 
-  // メニューの外をクリックしたとき、Esc を押したときに閉じる
-  document.addEventListener('pointerdown', (e) => {
-    if (!panel.hidden && !e.composedPath().includes(root)) setOpen(false);
+  // キーボード（Enter / Space）で押されたとき。マウスのときは pointerup で開いている
+  icon.addEventListener('click', (e) => {
+    if (e.detail === 0) setOpen(true);
   });
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !panel.hidden) setOpen(false);
+  collapse.addEventListener('click', () => {
+    // 格納したアイコンは、格納ボタンがあった場所に出す（中心を合わせる）
+    const r = collapse.getBoundingClientRect();
+    widget.right = window.innerWidth - (r.left + r.width / 2) - ICON_SIZE / 2;
+    widget.bottom = window.innerHeight - (r.top + r.height / 2) - ICON_SIZE / 2;
+    setOpen(false);
+    icon.focus();
   });
 
   // ---------------------------------------------------------------------------
@@ -160,22 +246,12 @@ export function createMenu(container: HTMLElement): { update(state: MenuState): 
       const ok = await copyText(phrase.text, root);
       button.classList.remove('lcp-copied', 'lcp-failed');
       button.classList.add(ok ? 'lcp-copied' : 'lcp-failed');
-      status.textContent = ok ? t('copied') : t('copyFailed');
+      // うまくいったときはボタンの色だけで知らせる。失敗したときは、どうすればよいかを出す
+      status.textContent = ok ? '' : t('copyFailed');
       setTimeout(() => button.classList.remove('lcp-copied', 'lcp-failed'), FLASH_MS);
     });
     return button;
   };
-
-  const section = (title: string, phrases: Phrase[]) => {
-    const s = el('section', 'lcp-section');
-    const list = el('div', 'lcp-phrases');
-    list.append(...phrases.map(phraseButton));
-    s.append(el('h3', 'lcp-section-title', title), list);
-    return s;
-  };
-
-  const status = el('div', 'lcp-status');
-  status.setAttribute('aria-live', 'polite');
 
   /** メニューの中身を作り直す。中身が変わっていなければ何もしない（コピーした表示が消えないように） */
   const render = (force = false) => {
@@ -184,30 +260,40 @@ export function createMenu(container: HTMLElement): { update(state: MenuState): 
     renderedKey = key;
 
     const { page, data, loadError } = state;
-    const header = el('div', 'lcp-header');
     const channel = data && page ? findChannel(data, page) : undefined;
     if (channel) {
-      header.append(el('span', 'lcp-channel', channel.name));
+      channelArea.replaceChildren(el('span', 'lcp-channel', channelDisplayName(channel)));
     } else if (page) {
-      header.append(
+      channelArea.replaceChildren(
         el('span', 'lcp-channel', page.handle ? `@${page.handle}` : (page.youtubeChannelId ?? '')),
         el('span', 'lcp-badge', t('notRegistered')),
       );
     } else {
-      header.append(el('span', 'lcp-channel lcp-muted', t('channelUnknown')));
+      channelArea.replaceChildren(el('span', 'lcp-channel lcp-muted', t('channelUnknown')));
     }
 
-    const body: HTMLElement[] = [];
     if (loadError) {
-      body.push(el('p', 'lcp-message', t(loadError === 'newerSchemaVersion' ? 'errorNewerVersion' : 'errorLoadFailed')));
+      body.replaceChildren(el('p', 'lcp-message', t(loadError === 'newerSchemaVersion' ? 'errorNewerVersion' : 'errorLoadFailed')));
     } else if (data) {
-      if (data.globalPhrases.length > 0) body.push(section(t('sectionGlobal'), data.globalPhrases));
-      if (channel && channel.phrases.length > 0) body.push(section(t('sectionChannel'), channel.phrases));
-      if (body.length === 0) body.push(el('p', 'lcp-message', t('noPhrases')));
+      // 見出しは付けず、共通 → チャンネルの順に並べるだけ
+      const phrases = [...data.globalPhrases, ...(channel?.phrases ?? [])];
+      if (phrases.length > 0) {
+        const list = el('div', 'lcp-phrases');
+        list.append(...phrases.map(phraseButton));
+        body.replaceChildren(list);
+      } else {
+        body.replaceChildren(el('p', 'lcp-message', t('noPhrases')));
+      }
+    } else {
+      body.replaceChildren();
     }
-
     status.textContent = '';
-    panel.replaceChildren(header, ...body, status);
+    // 中身の大きさが変わると、はみ出すことがある
+    if (widget.open) place();
+  };
+
+  const applyVisibility = () => {
+    root.hidden = !loaded || !state.visible;
   };
 
   return {
@@ -215,10 +301,10 @@ export function createMenu(container: HTMLElement): { update(state: MenuState): 
       state = next;
       // YouTube のダークテーマに合わせる（<html dark> が付く）
       root.classList.toggle('lcp-dark', document.documentElement.hasAttribute('dark'));
-      root.hidden = !state.visible;
-      if (!state.visible) setOpen(false);
-      else if (!panel.hidden) render();
-      else renderedKey = '';
+      const wasHidden = root.hidden;
+      applyVisibility();
+      if (widget.open) render(wasHidden);
+      if (wasHidden && !root.hidden) place();
     },
   };
 }

@@ -20,6 +20,8 @@ export type ErrorCode =
   | 'channelPlacement'
   /** groups / ungroupedChannelIds が存在しないチャンネルを指している（detail に id） */
   | 'unknownChannelRef'
+  /** チャンネルにハンドルも YouTube のチャンネル ID もない（detail にチャンネルの id） */
+  | 'missingChannelKey'
   /** 同じハンドルが 2 つのチャンネルに登録されている（detail にハンドル） */
   | 'duplicateHandle'
   /** 同じ YouTube のチャンネル ID が 2 つのチャンネルに登録されている（detail に ID） */
@@ -106,22 +108,24 @@ export function parseChannel(v: unknown, path: string, errors: DataError[]): Cha
   if (
     !isObject(v) ||
     !isNonEmptyString(v.id) ||
-    typeof v.name !== 'string' ||
-    !isStringArray(v.handles) ||
-    !isStringArray(v.youtubeChannelIds)
+    (v.name !== undefined && typeof v.name !== 'string') ||
+    (v.handle !== undefined && typeof v.handle !== 'string') ||
+    (v.youtubeChannelId !== undefined && typeof v.youtubeChannelId !== 'string')
   ) {
     errors.push({ code: 'invalidShape', detail: path });
     return null;
   }
   const phrases = parsePhrases(v.phrases, `${path}.phrases`, errors);
   if (!phrases) return null;
-  return {
-    id: v.id,
-    name: v.name,
-    handles: v.handles.map(normalizeHandle).filter((h) => h.length > 0),
-    youtubeChannelIds: v.youtubeChannelIds.map((s) => s.trim()).filter((s) => s.length > 0),
-    phrases,
-  };
+  const channel: Channel = { id: v.id, phrases };
+  // 空の値は持たない（省略したときと同じ意味になるため）
+  const name = typeof v.name === 'string' ? v.name.trim() : '';
+  if (name) channel.name = name;
+  const handle = typeof v.handle === 'string' ? normalizeHandle(v.handle) : '';
+  if (handle) channel.handle = handle;
+  const youtubeChannelId = typeof v.youtubeChannelId === 'string' ? v.youtubeChannelId.trim() : '';
+  if (youtubeChannelId) channel.youtubeChannelId = youtubeChannelId;
+  return channel;
 }
 
 export function parseGroup(v: unknown, path: string, errors: DataError[]): Group | null {
@@ -209,19 +213,23 @@ export function checkRules(data: PhraseData): DataError[] {
     if (placed.get(ch.id) !== 1) errors.push({ code: 'channelPlacement', detail: ch.id });
   }
 
+  // ハンドルか YouTube のチャンネル ID のどちらかがないと、どのページとも一致しない
+  for (const ch of channels) {
+    if (!ch.handle && !ch.youtubeChannelId) errors.push({ code: 'missingChannelKey', detail: ch.id });
+  }
+
   // 同じハンドルや YouTube のチャンネル ID を 2 つのチャンネルに登録しない
-  const checkOwners = (code: ErrorCode, keysOf: (c: Channel) => string[]) => {
-    const owner = new Map<string, string>();
+  const checkUniqueKey = (code: ErrorCode, keyOf: (c: Channel) => string | undefined) => {
+    const seen = new Set<string>();
     for (const ch of channels) {
-      for (const key of new Set(keysOf(ch))) {
-        const other = owner.get(key);
-        if (other !== undefined && other !== ch.id) errors.push({ code, detail: key });
-        owner.set(key, ch.id);
-      }
+      const key = keyOf(ch);
+      if (!key) continue;
+      if (seen.has(key)) errors.push({ code, detail: key });
+      seen.add(key);
     }
   };
-  checkOwners('duplicateHandle', (c) => c.handles.map(handleKey));
-  checkOwners('duplicateYoutubeChannelId', (c) => c.youtubeChannelIds);
+  checkUniqueKey('duplicateHandle', (c) => (c.handle ? handleKey(c.handle) : undefined));
+  checkUniqueKey('duplicateYoutubeChannelId', (c) => c.youtubeChannelId);
 
   return errors;
 }

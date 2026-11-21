@@ -9,8 +9,7 @@ function makeChannel(handle: string, phraseCount = 1): Channel {
   return {
     id: newId(),
     name: handle,
-    handles: [handle],
-    youtubeChannelIds: [],
+    handle,
     phrases: Array.from({ length: phraseCount }, (_, i) => ({ id: newId(), text: `${handle} ${i}` })),
   };
 }
@@ -50,8 +49,9 @@ describe('JSON のエクスポートとインポート', () => {
   it('エクスポートしたものをインポートすると元に戻る', () => {
     const grouped = makeChannel('grouped', 2);
     grouped.phrases[0]!.label = 'label';
-    grouped.youtubeChannelIds.push('UCabcdefghijklmnopqrstuv');
+    grouped.youtubeChannelId = 'UCabcdefghijklmnopqrstuv';
     const ungrouped = makeChannel('ungrouped');
+    delete ungrouped.name; // 名前を省略したチャンネル
     const data = makeData(grouped, ungrouped);
     data.ungroupedChannelIds = [ungrouped.id];
     data.groups.push({ id: newId(), name: 'group', channelIds: [grouped.id] });
@@ -86,6 +86,12 @@ describe('決まりのチェック', () => {
     data.channels[b.id] = b; // どこにも入っていない
     data.groups.push({ id: newId(), name: 'g', channelIds: [a.id] }); // a は 2 か所目
     expect(checkRules(data).map((e) => e.code).sort()).toEqual(['channelPlacement', 'channelPlacement']);
+  });
+
+  it('ハンドルも YouTube のチャンネル ID もないチャンネルはエラーにする', () => {
+    const ch = makeChannel('a');
+    delete ch.handle;
+    expect(checkRules(makeData(ch))).toEqual([{ code: 'missingChannelKey', detail: ch.id }]);
   });
 
   it('同じハンドルを 2 つのチャンネルに登録するとエラーにする', () => {

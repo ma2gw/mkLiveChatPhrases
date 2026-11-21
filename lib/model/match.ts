@@ -15,13 +15,14 @@ export interface PageChannel {
 /** YouTube のチャンネル ID を優先し、なければハンドルで探す */
 export function findChannel(data: PhraseData, page: PageChannel): Channel | undefined {
   const channels = Object.values(data.channels);
-  if (page.youtubeChannelId) {
-    const found = channels.find((c) => c.youtubeChannelIds.includes(page.youtubeChannelId!));
+  const { youtubeChannelId, handle } = page;
+  if (youtubeChannelId) {
+    const found = channels.find((c) => c.youtubeChannelId === youtubeChannelId);
     if (found) return found;
   }
-  if (page.handle) {
-    const key = handleKey(page.handle);
-    return channels.find((c) => c.handles.some((h) => handleKey(h) === key));
+  if (handle) {
+    const key = handleKey(handle);
+    return channels.find((c) => c.handle !== undefined && handleKey(c.handle) === key);
   }
   return undefined;
 }

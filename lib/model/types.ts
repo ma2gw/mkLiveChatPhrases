@@ -19,20 +19,30 @@ export interface Phrase {
   label?: string;
 }
 
-/** 定型文を登録するチャンネル */
+/**
+ * 定型文を登録するチャンネル（YouTube のチャンネル 1 つに対応する）
+ * handle と youtubeChannelId のどちらか一方は必須（checkRules で確かめる）
+ */
 export interface Channel {
   id: string;
-  /** 編集画面で表示する名前 */
-  name: string;
+  /** 表示する名前。省略したらハンドルを表示する（channelDisplayName を使う） */
+  name?: string;
   /**
-   * 見ているページがこのチャンネルかどうかを判定するためのハンドル（複数の別名を持てる）
+   * 見ているページがこのチャンネルかどうかを判定するためのハンドル
    * '@' を外し、decodeURIComponent したものを保存する。比べるときは大文字と小文字を区別しない
    */
-  handles: string[];
+  handle?: string;
   /** YouTube のチャンネル ID（'UC...'）。ハンドルが変わっても判定できるように持つ */
-  youtubeChannelIds: string[];
+  youtubeChannelId?: string;
   /** 配列の順番がメニューでの並び順 */
   phrases: Phrase[];
+}
+
+/** チャンネルの表示名。name がなければハンドル、それもなければ YouTube のチャンネル ID */
+export function channelDisplayName(channel: Channel): string {
+  if (channel.name) return channel.name;
+  if (channel.handle) return `@${channel.handle}`;
+  return channel.youtubeChannelId ?? '';
 }
 
 /** チャンネルを整理するためのグループ（フォルダ）。フレーズは持たない */
