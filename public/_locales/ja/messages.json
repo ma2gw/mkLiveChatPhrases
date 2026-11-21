@@ -75,6 +75,10 @@
     "message": "定型文を読み込めませんでした。",
     "description": "保存されたデータを読めなかったときの表示"
   },
+  "registerChannel": {
+    "message": "このチャンネルを登録する",
+    "description": "メニューの「未登録」のツールチップ"
+  },
   "openEditor": {
     "message": "編集画面を開く",
     "description": "メニューの編集ボタンのツールチップとラベル"

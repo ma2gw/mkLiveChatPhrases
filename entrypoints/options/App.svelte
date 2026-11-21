@@ -10,7 +10,8 @@
   import { onDestroy, untrack } from 'svelte';
   import { t } from '../../lib/i18n';
   import { canonicalJson } from '../../lib/model/compare';
-  import { normalizeForSave } from '../../lib/model/edit';
+  import { addChannel, normalizeForSave } from '../../lib/model/edit';
+  import { findChannel } from '../../lib/model/match';
   import type { PhraseData } from '../../lib/model/types';
   import { checkRules } from '../../lib/model/validate';
   import { exportToJson, importFromJson } from '../../lib/storage/importExport';
@@ -63,10 +64,33 @@
   // 読み込み
   // ---------------------------------------------------------------------------
 
-  /** #channel=<id> で開かれたら、そのチャンネルを選ぶ */
+  /**
+   * URL の # から、開いたときに選ぶものを決める（メニューから開いたとき）
+   * - #channel=<id>: そのチャンネルを選ぶ
+   * - #new&handle=…&uc=…: そのハンドルとチャンネル ID を入れたチャンネルを「グループなし」に作って選ぶ
+   *   （下書きに作るだけ。保存するまでは登録されない。すでに登録されていれば、それを選ぶ）
+   */
   function selectFromHash() {
-    const id = new URLSearchParams(location.hash.slice(1)).get('channel');
-    if (id && editor.draft?.channels[id]) editor.selection = { kind: 'channel', id };
+    const draft = editor.draft;
+    if (!draft) return;
+    const params = new URLSearchParams(location.hash.slice(1));
+    const id = params.get('channel');
+    if (id && draft.channels[id]) {
+      editor.selection = { kind: 'channel', id };
+    } else if (params.has('new')) {
+      const page = { handle: params.get('handle') ?? undefined, youtubeChannelId: params.get('uc') ?? undefined };
+      if (page.handle || page.youtubeChannelId) {
+        let channel = findChannel(draft, page);
+        if (!channel) {
+          channel = addChannel(draft, null);
+          if (page.handle) channel.handle = page.handle;
+          if (page.youtubeChannelId) channel.youtubeChannelId = page.youtubeChannelId;
+        }
+        editor.selection = { kind: 'channel', id: channel.id };
+      }
+      // 読み込み直したときに、もう一度作らないようにする
+      history.replaceState(null, '', location.pathname);
+    }
   }
 
   loadData().then(

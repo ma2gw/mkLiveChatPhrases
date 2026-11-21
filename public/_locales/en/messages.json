@@ -75,6 +75,10 @@
     "message": "Could not load your phrases.",
     "description": "Shown when stored data cannot be loaded"
   },
+  "registerChannel": {
+    "message": "Register this channel",
+    "description": "Tooltip of the \"Not registered\" badge in the menu"
+  },
   "openEditor": {
     "message": "Open the editor",
     "description": "Tooltip and label of the edit button in the menu"

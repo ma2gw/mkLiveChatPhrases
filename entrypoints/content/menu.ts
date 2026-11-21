@@ -35,6 +35,8 @@ export interface MenuHandlers {
   onAddPhrase(text: string): Promise<boolean>;
   /** 編集画面を開く（見ているチャンネルが登録済みなら、それを選んだ状態で） */
   onOpenEditor(): void;
+  /** 「未登録」を押したとき。見ているチャンネルのハンドルと ID を入れた状態で、登録の画面を開く */
+  onRegisterChannel(): void;
 }
 
 /** メニューが広がる向き */
@@ -48,7 +50,7 @@ const MARGIN = 8;
 const DRAG_THRESHOLD = 4;
 const FLASH_MS = 600;
 /** ドラッグを始めない要素（クリックを優先する） */
-const NO_DRAG = '.lcp-phrase, .lcp-collapse, .lcp-mod, .lcp-add, .lcp-add-form';
+const NO_DRAG = '.lcp-phrase, .lcp-collapse, .lcp-badge, .lcp-mod, .lcp-add, .lcp-add-form';
 
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -391,6 +393,15 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): { up
     return form;
   };
 
+  /** 「未登録」のバッジ。押すと、このチャンネルを登録する画面を開く */
+  const registerBadge = () => {
+    const badge = el('button', 'lcp-badge', t('notRegistered'));
+    badge.type = 'button';
+    badge.title = t('registerChannel');
+    badge.addEventListener('click', () => handlers.onRegisterChannel());
+    return badge;
+  };
+
   /** メニューの中身を作り直す。中身が変わっていなければ何もしない（コピーした表示が消えないように） */
   const render = (force = false) => {
     const key = JSON.stringify([state.page, state.data, state.loadError]);
@@ -406,7 +417,7 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): { up
     } else if (page) {
       channelArea.replaceChildren(
         el('span', 'lcp-channel', page.handle ? `@${page.handle}` : (page.youtubeChannelId ?? '')),
-        el('span', 'lcp-badge', t('notRegistered')),
+        registerBadge(),
       );
     } else {
       channelArea.replaceChildren(el('span', 'lcp-channel lcp-muted', t('channelUnknown')));

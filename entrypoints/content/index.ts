@@ -51,6 +51,13 @@ export default defineContentScript({
           console.warn('[LiveChatPhrases] 編集画面を開けませんでした', e);
         });
       },
+      onRegisterChannel() {
+        const page = getPageChannel();
+        if (!page) return;
+        browser.runtime.sendMessage({ type: 'openEditor', newChannel: page }).catch((e: unknown) => {
+          console.warn('[LiveChatPhrases] 編集画面を開けませんでした', e);
+        });
+      },
     };
 
     const ui = await createShadowRootUi(ctx, {
