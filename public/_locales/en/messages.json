@@ -74,5 +74,101 @@
   "errorLoadFailed": {
     "message": "Could not load your phrases.",
     "description": "Shown when stored data cannot be loaded"
+  },
+  "openEditor": {
+    "message": "Open the editor",
+    "description": "Tooltip and label of the edit button in the menu"
+  },
+
+  "save": { "message": "Save", "description": "Editor: save button" },
+  "saved": { "message": "Saved", "description": "Editor: shown after saving" },
+  "unsaved": { "message": "You have unsaved changes", "description": "Editor: shown when there are unsaved changes" },
+  "import": { "message": "Import", "description": "Editor: import button" },
+  "export": { "message": "Export", "description": "Editor: export button" },
+  "exportNeedsSave": { "message": "Save before exporting", "description": "Editor: tooltip of the export button when there are unsaved changes" },
+  "imported": { "message": "Imported", "description": "Editor: shown after importing" },
+  "importConfirm": { "message": "Replace all of your current data with the imported data?", "description": "Editor: confirmation before importing" },
+  "importConfirmUnsaved": { "message": "Replace all of your current data, including unsaved changes, with the imported data?", "description": "Editor: confirmation before importing when there are unsaved changes" },
+  "externalChange": { "message": "Your saved data was changed in another tab or on another computer.", "description": "Editor: notice when stored data changed while editing" },
+  "reloadDiscard": { "message": "Reload", "description": "Editor: button to reload the stored data" },
+  "discardConfirm": { "message": "Your unsaved changes will be lost. Continue?", "description": "Editor: confirmation before reloading" },
+
+  "globalPhrases": { "message": "All channels", "description": "Editor: phrases shared by all channels" },
+  "globalPhrasesHelp": { "message": "Shown first in the menu on every channel.", "description": "Editor: help text for shared phrases" },
+  "ungrouped": { "message": "No group", "description": "Editor: channels not in any group" },
+  "addGroup": { "message": "+ Group", "description": "Editor: button to add a group" },
+  "addChannel": { "message": "+ Channel", "description": "Editor: button to add a channel" },
+  "newGroupName": { "message": "New group", "description": "Editor: name of a newly added group" },
+  "unnamedGroup": { "message": "(No name)", "description": "Editor: group without a name" },
+  "unnamedChannel": { "message": "(Not set)", "description": "Editor: channel without a name, handle, or channel ID" },
+  "dragHandle": { "message": "Drag to reorder", "description": "Editor: tooltip of the ≡ handle" },
+
+  "channelName": { "message": "Name", "description": "Editor: channel name field" },
+  "channelNamePlaceholder": { "message": "Defaults to the handle", "description": "Editor: placeholder of the channel name field" },
+  "handle": { "message": "Handle", "description": "Editor: handle field" },
+  "youtubeChannelId": { "message": "Channel ID", "description": "Editor: YouTube channel ID (UC...) field" },
+  "group": { "message": "Group", "description": "Editor: group of the channel" },
+  "phrases": { "message": "Phrases", "description": "Editor: phrases heading" },
+  "deleteChannel": { "message": "Delete channel", "description": "Editor: button to delete a channel" },
+  "deleteChannelConfirm": {
+    "message": "Delete \"$NAME$\"?",
+    "description": "Editor: confirmation before deleting a channel",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "groupName": { "message": "Group name", "description": "Editor: group name field" },
+  "deleteGroup": { "message": "Delete group", "description": "Editor: button to delete a group" },
+  "deleteGroupConfirm": {
+    "message": "Delete the group \"$NAME$\"? Its channels will be moved to \"No group\".",
+    "description": "Editor: confirmation before deleting a group",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "channelCount": {
+    "message": "$COUNT$ channel(s)",
+    "description": "Editor: number of channels in a group",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "phraseLabel": { "message": "Label (optional)", "description": "Editor: phrase label field" },
+  "phraseText": { "message": "Text to copy", "description": "Editor: phrase text field" },
+  "addPhraseRow": { "message": "+ Add phrase", "description": "Editor: button to add a phrase" },
+  "deletePhrase": { "message": "Delete", "description": "Editor: button to delete a phrase" },
+
+  "errMissingChannelKey": {
+    "message": "Enter a handle or a channel ID for \"$NAME$\".",
+    "description": "Editor error",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "errDuplicateHandle": {
+    "message": "The handle @$HANDLE$ is registered to two channels.",
+    "description": "Editor error",
+    "placeholders": { "handle": { "content": "$1" } }
+  },
+  "errDuplicateYoutubeChannelId": {
+    "message": "The channel ID $ID$ is registered to two channels.",
+    "description": "Editor error",
+    "placeholders": { "id": { "content": "$1" } }
+  },
+  "errEmptyPhrase": {
+    "message": "\"$NAME$\" has a phrase with no text to copy.",
+    "description": "Editor error",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "errItemTooLarge": {
+    "message": "\"$NAME$\" has too many phrases to save.",
+    "description": "Editor error",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "errTotalTooLarge": { "message": "Your data is too large to save.", "description": "Editor error" },
+  "errTooManyItems": { "message": "You have too many channels to save.", "description": "Editor error" },
+  "errInvalidJson": { "message": "This file is not valid JSON.", "description": "Import error" },
+  "errUnsupportedFormat": { "message": "This file is not data from this extension.", "description": "Import error" },
+  "errInvalidShape": {
+    "message": "The data is not in the expected format ($DETAIL$).",
+    "description": "Import error",
+    "placeholders": { "detail": { "content": "$1" } }
+  },
+  "errInconsistent": {
+    "message": "The data is inconsistent ($CODE$: $DETAIL$).",
+    "description": "Editor error (should not normally happen)",
+    "placeholders": { "code": { "content": "$1" }, "detail": { "content": "$2" } }
   }
 }

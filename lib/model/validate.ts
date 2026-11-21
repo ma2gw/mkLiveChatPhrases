@@ -20,6 +20,8 @@ export type ErrorCode =
   | 'channelPlacement'
   /** groups / ungroupedChannelIds が存在しないチャンネルを指している（detail に id） */
   | 'unknownChannelRef'
+  /** コピーする文字列が空（空白だけを含む）のフレーズがある（detail にフレーズの id） */
+  | 'emptyPhrase'
   /** チャンネルにハンドルも YouTube のチャンネル ID もない（detail にチャンネルの id） */
   | 'missingChannelKey'
   /** 同じハンドルが 2 つのチャンネルに登録されている（detail にハンドル） */
@@ -201,7 +203,13 @@ export function checkRules(data: PhraseData): DataError[] {
   };
   const channels = Object.values(data.channels);
   checkUnique(data.groups.map((g) => g.id));
-  checkUnique([...data.globalPhrases, ...channels.flatMap((c) => c.phrases)].map((p) => p.id));
+  const allPhrases = [...data.globalPhrases, ...channels.flatMap((c) => c.phrases)];
+  checkUnique(allPhrases.map((p) => p.id));
+
+  // コピーする文字列が空のフレーズは保存しない（次に読むときに壊れたデータとして扱われるため）
+  for (const p of allPhrases) {
+    if (!p.text.trim()) errors.push({ code: 'emptyPhrase', detail: p.id });
+  }
 
   // どのチャンネルも、どこか 1 か所だけに入っている
   const placed = new Map<string, number>();

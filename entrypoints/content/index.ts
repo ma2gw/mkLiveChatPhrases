@@ -6,6 +6,7 @@
  */
 import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
 import { addPhraseToChannel } from '../../lib/model/edit';
+import { findChannel } from '../../lib/model/match';
 import { NewerSchemaVersionError, loadData, saveData, watchData } from '../../lib/storage/sync';
 import { createMenu, type MenuHandlers, type MenuState } from './menu';
 import styleText from './style.css?inline';
@@ -41,6 +42,14 @@ export default defineContentScript({
           console.warn('[LiveChatPhrases] 追加できませんでした', e);
           return false;
         }
+      },
+      onOpenEditor() {
+        // content script からはタブを開けないので、background に頼む
+        const page = getPageChannel();
+        const channelId = data && page ? findChannel(data, page)?.id : undefined;
+        browser.runtime.sendMessage({ type: 'openEditor', channelId }).catch((e: unknown) => {
+          console.warn('[LiveChatPhrases] 編集画面を開けませんでした', e);
+        });
       },
     };
 

@@ -74,5 +74,101 @@
   "errorLoadFailed": {
     "message": "定型文を読み込めませんでした。",
     "description": "保存されたデータを読めなかったときの表示"
+  },
+  "openEditor": {
+    "message": "編集画面を開く",
+    "description": "メニューの編集ボタンのツールチップとラベル"
+  },
+
+  "save": { "message": "保存", "description": "編集画面: 保存ボタン" },
+  "saved": { "message": "保存しました", "description": "編集画面: 保存したあとの表示" },
+  "unsaved": { "message": "保存していない変更があります", "description": "編集画面: 保存していない変更があるときの表示" },
+  "import": { "message": "インポート", "description": "編集画面: インポートボタン" },
+  "export": { "message": "エクスポート", "description": "編集画面: エクスポートボタン" },
+  "exportNeedsSave": { "message": "保存してからエクスポートしてください", "description": "編集画面: 保存していないときのエクスポートボタンのツールチップ" },
+  "imported": { "message": "インポートしました", "description": "編集画面: インポートしたあとの表示" },
+  "importConfirm": { "message": "今のデータをすべて、読み込んだデータに置き換えます。よろしいですか？", "description": "編集画面: インポートの確認" },
+  "importConfirmUnsaved": { "message": "今のデータ（保存していない変更も含む）をすべて、読み込んだデータに置き換えます。よろしいですか？", "description": "編集画面: 保存していない変更があるときのインポートの確認" },
+  "externalChange": { "message": "別のタブや PC で、保存されているデータが変わりました。", "description": "編集画面: 編集中に別の場所でデータが変わったときのお知らせ" },
+  "reloadDiscard": { "message": "読み込み直す", "description": "編集画面: 保存されているデータを読み込み直すボタン" },
+  "discardConfirm": { "message": "保存していない変更は消えます。よろしいですか？", "description": "編集画面: 読み込み直す前の確認" },
+
+  "globalPhrases": { "message": "共通", "description": "編集画面: 全チャンネル共通のフレーズ" },
+  "globalPhrasesHelp": { "message": "どのチャンネルでも、メニューの最初に表示します。", "description": "編集画面: 共通のフレーズの説明" },
+  "ungrouped": { "message": "グループなし", "description": "編集画面: どのグループにも入っていないチャンネル" },
+  "addGroup": { "message": "+ グループ", "description": "編集画面: グループを追加するボタン" },
+  "addChannel": { "message": "+ チャンネル", "description": "編集画面: チャンネルを追加するボタン" },
+  "newGroupName": { "message": "新しいグループ", "description": "編集画面: 追加したグループの名前" },
+  "unnamedGroup": { "message": "（名前なし）", "description": "編集画面: 名前のないグループ" },
+  "unnamedChannel": { "message": "（未設定）", "description": "編集画面: 名前もハンドルもチャンネル ID もないチャンネル" },
+  "dragHandle": { "message": "ドラッグで並べ替え", "description": "編集画面: ≡ のツールチップ" },
+
+  "channelName": { "message": "名前", "description": "編集画面: チャンネルの名前の欄" },
+  "channelNamePlaceholder": { "message": "省略するとハンドルを表示", "description": "編集画面: チャンネルの名前の欄のプレースホルダー" },
+  "handle": { "message": "ハンドル", "description": "編集画面: ハンドルの欄" },
+  "youtubeChannelId": { "message": "チャンネル ID", "description": "編集画面: YouTube のチャンネル ID（UC...）の欄" },
+  "group": { "message": "グループ", "description": "編集画面: チャンネルが入っているグループの欄" },
+  "phrases": { "message": "フレーズ", "description": "編集画面: フレーズの見出し" },
+  "deleteChannel": { "message": "チャンネルを削除", "description": "編集画面: チャンネルを削除するボタン" },
+  "deleteChannelConfirm": {
+    "message": "「$NAME$」を削除します。よろしいですか？",
+    "description": "編集画面: チャンネルを削除する前の確認",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "groupName": { "message": "グループ名", "description": "編集画面: グループの名前の欄" },
+  "deleteGroup": { "message": "グループを削除", "description": "編集画面: グループを削除するボタン" },
+  "deleteGroupConfirm": {
+    "message": "グループ「$NAME$」を削除します。中のチャンネルは「グループなし」に移ります。よろしいですか？",
+    "description": "編集画面: グループを削除する前の確認",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "channelCount": {
+    "message": "$COUNT$ チャンネル",
+    "description": "編集画面: グループに入っているチャンネルの数",
+    "placeholders": { "count": { "content": "$1" } }
+  },
+  "phraseLabel": { "message": "表示名（省略可）", "description": "編集画面: フレーズの表示名の欄" },
+  "phraseText": { "message": "コピーする文字列", "description": "編集画面: フレーズのコピーする文字列の欄" },
+  "addPhraseRow": { "message": "+ フレーズを追加", "description": "編集画面: フレーズを追加するボタン" },
+  "deletePhrase": { "message": "削除", "description": "編集画面: フレーズを削除するボタン" },
+
+  "errMissingChannelKey": {
+    "message": "「$NAME$」にハンドルかチャンネル ID を入れてください。",
+    "description": "編集画面のエラー",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "errDuplicateHandle": {
+    "message": "ハンドル @$HANDLE$ が 2 つのチャンネルに登録されています。",
+    "description": "編集画面のエラー",
+    "placeholders": { "handle": { "content": "$1" } }
+  },
+  "errDuplicateYoutubeChannelId": {
+    "message": "チャンネル ID $ID$ が 2 つのチャンネルに登録されています。",
+    "description": "編集画面のエラー",
+    "placeholders": { "id": { "content": "$1" } }
+  },
+  "errEmptyPhrase": {
+    "message": "「$NAME$」に、コピーする文字列が空のフレーズがあります。",
+    "description": "編集画面のエラー",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "errItemTooLarge": {
+    "message": "「$NAME$」のフレーズが多すぎて保存できません。",
+    "description": "編集画面のエラー",
+    "placeholders": { "name": { "content": "$1" } }
+  },
+  "errTotalTooLarge": { "message": "データ全体が大きすぎて保存できません。", "description": "編集画面のエラー" },
+  "errTooManyItems": { "message": "チャンネルが多すぎて保存できません。", "description": "編集画面のエラー" },
+  "errInvalidJson": { "message": "JSON として読めないファイルです。", "description": "インポートのエラー" },
+  "errUnsupportedFormat": { "message": "この拡張機能のデータではありません。", "description": "インポートのエラー" },
+  "errInvalidShape": {
+    "message": "データの形が正しくありません（$DETAIL$）。",
+    "description": "インポートのエラー",
+    "placeholders": { "detail": { "content": "$1" } }
+  },
+  "errInconsistent": {
+    "message": "データに不整合があります（$CODE$: $DETAIL$）。",
+    "description": "編集画面のエラー（普通は起きない）",
+    "placeholders": { "code": { "content": "$1" }, "detail": { "content": "$2" } }
   }
 }

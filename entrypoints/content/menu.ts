@@ -14,6 +14,7 @@
  */
 import { findChannel, type PageChannel } from '../../lib/model/match';
 import { channelDisplayName, type Phrase, type PhraseData } from '../../lib/model/types';
+import { t } from '../../lib/i18n';
 import { afterCopy, applyMods, MODS, toggleMod } from '../../lib/mods';
 import { copyText } from './clipboard';
 import { DEFAULT_WIDGET, loadWidgetState, saveWidgetState, type WidgetState } from './widgetState';
@@ -32,6 +33,8 @@ export interface MenuState {
 export interface MenuHandlers {
   /** + から入力された文字列を、見ているチャンネルに追加して保存する。保存できたら true */
   onAddPhrase(text: string): Promise<boolean>;
+  /** 編集画面を開く（見ているチャンネルが登録済みなら、それを選んだ状態で） */
+  onOpenEditor(): void;
 }
 
 /** メニューが広がる向き */
@@ -47,10 +50,6 @@ const FLASH_MS = 600;
 /** ドラッグを始めない要素（クリックを優先する） */
 const NO_DRAG = '.lcp-phrase, .lcp-collapse, .lcp-mod, .lcp-add, .lcp-add-form';
 
-// public/_locales/{en,ja}/messages.json から文言を引く
-function t(key: string): string {
-  return browser.i18n.getMessage(key as never) || key;
-}
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
   const e = document.createElement(tag);
@@ -75,6 +74,8 @@ function svgIcon(d: string): SVGSVGElement {
 const ICON_CHAT = 'M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm3 6v2h2v-2H7zm4 0v2h2v-2h-2zm4 0v2h2v-2h-2z';
 /** 格納（横棒） */
 const ICON_COLLAPSE = 'M5 11h14v2H5z';
+/** 編集（鉛筆） */
+const ICON_EDIT = 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z';
 
 export function createMenu(container: HTMLElement, handlers: MenuHandlers): { update(state: MenuState): void } {
   // ---------------------------------------------------------------------------
@@ -99,7 +100,13 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): { up
   collapse.setAttribute('aria-label', t('collapseMenu'));
   collapse.title = t('collapseMenu');
   collapse.appendChild(svgIcon(ICON_COLLAPSE));
-  header.append(channelArea, collapse);
+  const edit = el('button', 'lcp-collapse');
+  edit.type = 'button';
+  edit.setAttribute('aria-label', t('openEditor'));
+  edit.title = t('openEditor');
+  edit.appendChild(svgIcon(ICON_EDIT));
+  edit.addEventListener('click', () => handlers.onOpenEditor());
+  header.append(channelArea, edit, collapse);
   const body = el('div', 'lcp-body');
 
   // コピーボタンの並びの下の行: mod の切り替え（オンのときは色が付く）

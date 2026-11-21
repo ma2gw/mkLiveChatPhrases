@@ -2,6 +2,8 @@ import { defineConfig } from 'wxt';
 
 // 設定項目: https://wxt.dev/api/reference/wxt/interfaces/inlineconfig.html
 export default defineConfig({
+  // 編集画面（entrypoints/options）は Svelte で書く。フローティングメニューは vanilla のまま
+  modules: ['@wxt-dev/module-svelte'],
   manifest: {
     // 名前と説明は public/_locales/*/messages.json から読む
     name: '__MSG_extName__',
