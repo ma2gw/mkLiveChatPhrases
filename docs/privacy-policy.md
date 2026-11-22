@@ -43,7 +43,9 @@ mkLiveChatPhrases（以下「本拡張機能」）は、ライブ配信のチャ
 
 ## お問い合わせ
 
-（連絡先）
+ご質問や不具合の報告は、GitHub の Issues にお寄せください。
+
+https://github.com/ma2gw/mkLiveChatPhrases/issues
 
 ---
 
@@ -90,4 +92,6 @@ If this policy changes, this page will be updated along with the "Last updated" 
 
 ## Contact
 
-(Contact)
+For questions or bug reports, please open an issue on GitHub:
+
+https://github.com/ma2gw/mkLiveChatPhrases/issues
