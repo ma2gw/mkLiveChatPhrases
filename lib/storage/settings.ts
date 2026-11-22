@@ -4,6 +4,29 @@
  * フレーズのデータ（meta / global / ch:<id>）とは別のキーに置き、エクスポートには含めない
  * 変更はすぐに保存する（編集画面の保存ボタンは使わない）
  */
+import { isHexColor } from '../color';
+
+/**
+ * メニューの見た目。色は '#rrggbb'、省略したら自動（または初期値）
+ * 文字の色は選べない（背景の明るさから白か黒を自動で選ぶ）
+ */
+export interface Appearance {
+  /**
+   * メニューの色。見出しやツールバーなどは、この色から濃淡を付けて作る
+   * 省略したら YouTube のテーマ（ライト / ダーク）に合わせる
+   */
+  menuColor?: string;
+  /** ボーダーの色。省略したらメニューの色（またはテーマ）から作る */
+  borderColor?: string;
+  /** 閉じているときの丸いアイコンの色。省略したら緑 */
+  iconColor?: string;
+  /** 背景（見出し、ツールバー、フレーズの欄）の不透明度。50〜100（%） */
+  opacity: number;
+}
+
+export const OPACITY_MIN = 50;
+export const OPACITY_MAX = 100;
+
 export interface Settings {
   /**
    * 有効にした mod の id（メニューにボタンを出す）
@@ -20,12 +43,29 @@ export interface Settings {
    * 初期値はオフ（初めて使う人が「未登録」から登録する流れに気づけるように）
    */
   hideUnregistered: boolean;
+  /** メニューの見た目 */
+  appearance: Appearance;
 }
 
 const KEY = 'settings';
 
 export function defaultSettings(): Settings {
-  return { enabledMods: [], submitOnEnter: false, hideUnregistered: false };
+  return { enabledMods: [], submitOnEnter: false, hideUnregistered: false, appearance: { opacity: OPACITY_MAX } };
+}
+
+/** 見た目を読む。色が '#rrggbb' でなければ省略（自動）、不透明度は 50〜100 に収める */
+function parseAppearance(value: unknown): Appearance {
+  const v = value as Partial<Appearance> | undefined;
+  const appearance: Appearance = {
+    opacity:
+      typeof v?.opacity === 'number' && Number.isFinite(v.opacity)
+        ? Math.min(OPACITY_MAX, Math.max(OPACITY_MIN, Math.round(v.opacity)))
+        : OPACITY_MAX,
+  };
+  for (const key of ['menuColor', 'borderColor', 'iconColor'] as const) {
+    if (isHexColor(v?.[key])) appearance[key] = v[key].toLowerCase();
+  }
+  return appearance;
 }
 
 /** 読めないときや、形が違うときは初期値にする（項目ごとに） */
@@ -35,6 +75,7 @@ function parseSettings(value: unknown): Settings {
     enabledMods: Array.isArray(v?.enabledMods) ? v.enabledMods.filter((x): x is string => typeof x === 'string') : [],
     submitOnEnter: v?.submitOnEnter === true,
     hideUnregistered: v?.hideUnregistered === true,
+    appearance: parseAppearance(v?.appearance),
   };
 }
 

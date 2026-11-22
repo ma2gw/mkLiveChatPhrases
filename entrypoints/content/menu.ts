@@ -16,7 +16,8 @@ import { findChannel, type PageChannel } from '../../lib/model/match';
 import { channelDisplayName, type Phrase, type PhraseData } from '../../lib/model/types';
 import { t } from '../../lib/i18n';
 import { afterCopy, applyMods, enabledMods, toggleMod, type Mod } from '../../lib/mods';
-import type { Settings } from '../../lib/storage/settings';
+import { textColorFor } from '../../lib/color';
+import type { Appearance, Settings } from '../../lib/storage/settings';
 import { copyText } from './clipboard';
 import { DEFAULT_WIDGET, loadWidgetState, saveWidgetState, type WidgetState } from './widgetState';
 
@@ -257,7 +258,14 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
   root.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     if (e.target instanceof Element && e.target.closest(NO_DRAG)) return;
-    root.setPointerCapture(e.pointerId);
+    // 拡張機能を読み込み直したあとなどで、メニューがもうページから外れていたら何もしない
+    // （外れた要素への setPointerCapture は InvalidStateError になる）
+    if (!root.isConnected) return;
+    try {
+      root.setPointerCapture(e.pointerId);
+    } catch {
+      // ポインターがもう押されていないときなども失敗する。つかまえられなくても、ドラッグはできる
+    }
     drag = { x: e.clientX, y: e.clientY, right: widget.right, bottom: widget.bottom, moved: false };
   });
   root.addEventListener('pointermove', (e) => {
@@ -483,6 +491,25 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
     if (widget.open) place();
   };
 
+  /**
+   * 設定の見た目を、CSS の変数として root に入れる（style.css の .lcp の説明を参照）
+   * 省略された色は変数を消し、style.css の値（テーマの色や初期値）を使う
+   * 文字の色は、背景の明るさから白か黒を選ぶ
+   */
+  const applyAppearance = (a: Appearance) => {
+    const set = (name: string, value: string | undefined) => {
+      if (value) root.style.setProperty(name, value);
+      else root.style.removeProperty(name);
+    };
+    root.classList.toggle('lcp-custom', !!a.menuColor);
+    set('--lcp-base', a.menuColor);
+    set('--lcp-fg', a.menuColor && textColorFor(a.menuColor));
+    set('--lcp-border', a.borderColor);
+    set('--lcp-icon-bg', a.iconColor);
+    set('--lcp-icon-fg', a.iconColor && textColorFor(a.iconColor));
+    set('--lcp-alpha', `${a.opacity}%`);
+  };
+
   const applyVisibility = () => {
     root.hidden = !loaded || !state.visible;
   };
@@ -500,6 +527,7 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
     },
     /** 設定（無効にした mod、Enter で追加するか）を反映する */
     applySettings(settings: Settings) {
+      applyAppearance(settings.appearance);
       renderModBar(enabledMods(settings.enabledMods));
       if (submitOnEnter !== settings.submitOnEnter) {
         submitOnEnter = settings.submitOnEnter;

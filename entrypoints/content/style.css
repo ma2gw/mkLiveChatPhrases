@@ -4,23 +4,41 @@
   display: none !important;
 }
 
-/* アイコンとメニューをまとめた部品。位置は menu.ts で right / bottom / left / top を指定する */
+/*
+ * アイコンとメニューをまとめた部品。位置は menu.ts で right / bottom / left / top を指定する
+ *
+ * 色の決め方
+ * - 背景は「不透明な色」（--lcp-s-*）を作り、それを不透明度（--lcp-alpha）で透けさせて使う
+ * - 不透明な色は、ふだんは YouTube のテーマ（ライト / ダーク）の決まった色
+ * - 設定でメニューの色を選んだとき（.lcp-custom）は、その色（--lcp-base）に文字の色（--lcp-fg）を
+ *   少しずつ混ぜて濃淡を作る（明るい色なら見出しが暗く、暗い色なら見出しが明るくなる）
+ * - --lcp-base / --lcp-fg / --lcp-border / --lcp-icon-bg / --lcp-icon-fg / --lcp-alpha は、
+ *   設定に合わせて menu.ts が root の style に入れる（入れていないものは、ここの値）
+ */
 .lcp {
-  --lcp-bg: #ffffff;
+  /* テーマ: ライト */
+  --lcp-s-bg: #ffffff;
+  --lcp-s-toolbar: #f4f4f4;
+  --lcp-s-header: #d9d9d9;
   --lcp-fg: #0f0f0f;
   --lcp-muted: #606060;
   --lcp-border: #d9d9d9;
   --lcp-button-bg: #f2f2f2;
   --lcp-button-hover: #e5e5e5;
+  /* 背景の不透明度と、透けさせた背景の色 */
+  --lcp-alpha: 100%;
+  --lcp-bg: color-mix(in srgb, var(--lcp-s-bg) var(--lcp-alpha), transparent);
+  --lcp-toolbar-bg: color-mix(in srgb, var(--lcp-s-toolbar) var(--lcp-alpha), transparent);
+  --lcp-header-bg: color-mix(in srgb, var(--lcp-s-header) var(--lcp-alpha), transparent);
+  /* 決まった色（メニューの色を変えても変わらない） */
   --lcp-accent: #3ea6ff;
   --lcp-once: #e8710a;
   --lcp-icon-bg: #1e8e3e;
-  --lcp-toolbar-bg: #f4f4f4;
-  --lcp-header-bg: #d9d9d9;
-  /* + を押したときの入力欄の行の高さ（フレーズ欄の下の余白もこれで計算する） */
-  --lcp-add-row: 28px;
+  --lcp-icon-fg: #ffffff;
   --lcp-ok: #2e9d5b;
   --lcp-ng: #d93025;
+  /* + を押したときの入力欄の行の高さ（フレーズ欄の下の余白もこれで計算する） */
+  --lcp-add-row: 28px;
   position: fixed;
   z-index: 2147483000;
   font-family: Roboto, 'Noto Sans JP', Arial, sans-serif;
@@ -30,15 +48,27 @@
   touch-action: none;
 }
 
+/* テーマ: ダーク（YouTube の <html dark>） */
 .lcp.lcp-dark {
-  --lcp-bg: #212121;
+  --lcp-s-bg: #212121;
+  --lcp-s-toolbar: #2a2a2a;
+  --lcp-s-header: #121212;
   --lcp-fg: #f1f1f1;
   --lcp-muted: #aaaaaa;
   --lcp-border: #3f3f3f;
   --lcp-button-bg: #303030;
   --lcp-button-hover: #3d3d3d;
-  --lcp-toolbar-bg: #2a2a2a;
-  --lcp-header-bg: #121212;
+}
+
+/* 設定でメニューの色を選んだとき（テーマより優先するので、.lcp-dark より後ろに書く） */
+.lcp.lcp-custom {
+  --lcp-s-bg: var(--lcp-base);
+  --lcp-s-toolbar: color-mix(in srgb, var(--lcp-base), var(--lcp-fg) 6%);
+  --lcp-s-header: color-mix(in srgb, var(--lcp-base), var(--lcp-fg) 15%);
+  --lcp-muted: color-mix(in srgb, var(--lcp-fg), var(--lcp-base) 40%);
+  --lcp-border: color-mix(in srgb, var(--lcp-base), var(--lcp-fg) 20%);
+  --lcp-button-bg: color-mix(in srgb, var(--lcp-base), var(--lcp-fg) 8%);
+  --lcp-button-hover: color-mix(in srgb, var(--lcp-base), var(--lcp-fg) 14%);
 }
 
 .lcp.lcp-dragging,
@@ -47,7 +77,7 @@
   user-select: none;
 }
 
-/* 閉じているときのアイコン（緑の丸に白い吹き出し。ライト / ダークで同じ色） */
+/* 閉じているときのアイコン（初期値は緑の丸に白い吹き出し。ライト / ダークで同じ色。設定で変えられる） */
 .lcp-icon {
   display: block;
   width: 40px;
@@ -56,7 +86,7 @@
   border: none;
   border-radius: 50%;
   background: var(--lcp-icon-bg);
-  color: #ffffff;
+  color: var(--lcp-icon-fg);
   box-shadow: 0 2px 8px rgb(0 0 0 / 25%);
   cursor: pointer;
   user-select: none;
@@ -108,13 +138,9 @@
   user-select: none;
 }
 
-/* 見出しの上のボタン（編集、格納）は、見出しの濃い色に合わせて少し濃く */
+/* 見出しの上のボタン（編集、格納）にマウスを乗せたとき。文字の色を薄く重ねる（どのメニューの色でも見える） */
 .lcp-header .lcp-collapse:hover {
-  background: rgb(0 0 0 / 12%);
-}
-
-.lcp-dark .lcp-header .lcp-collapse:hover {
-  background: rgb(255 255 255 / 12%);
+  background: color-mix(in srgb, var(--lcp-fg) 12%, transparent);
 }
 
 .lcp-channel-area {
