@@ -19,7 +19,9 @@ export default defineConfig({
     name: '__MSG_extName__',
     description: '__MSG_extDescription__',
     default_locale: 'en',
-    // 権限は最小限にする（ホスト権限は content script の matches から youtube.com だけになる）
+    // 使っている機能が動く最も古い Chrome（CSS の color-mix() は 111、URLSearchParams.size は 113 から）
+    minimum_chrome_version: '113',
+    // 権限は最小限にする（ホスト権限は content script の matches から www.youtube.com と www.twitch.tv だけになる）
     permissions: ['storage'],
     // ツールバーのアイコン。ポップアップは出さず、押すとメニューを隠す / 出す（background の action.onClicked）
     action: { default_title: '__MSG_actionHideMenu__' },
