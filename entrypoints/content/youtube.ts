@@ -22,6 +22,22 @@ export function isTargetPage(url: { pathname: string }): boolean {
 }
 
 /**
+ * メニューを出すかどうか
+ * - 出すページ（/watch、/live/）でなければ出さない
+ * - ツールバーのアイコンで隠していれば出さない
+ * - 設定「未登録のチャンネルでは出さない」がオンなら、登録していないチャンネル（分からないときも含む）では出さない
+ */
+export function shouldShowMenu(o: {
+  targetPage: boolean;
+  hidden: boolean;
+  hideUnregistered: boolean;
+  registered: boolean;
+}): boolean {
+  if (!o.targetPage || o.hidden) return false;
+  return !o.hideUnregistered || o.registered;
+}
+
+/**
  * チャンネルへのリンクからハンドルまたはチャンネル ID を取り出す
  * '/@foo'、'/@foo/videos'、'/@%E3%83%86...'、'/channel/UC...' に対応する
  */

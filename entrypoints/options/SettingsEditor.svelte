@@ -24,9 +24,9 @@
     void save();
   }
 
-  function setSubmitOnEnter(value: boolean) {
+  function setFlag(key: 'submitOnEnter' | 'hideUnregistered', value: boolean) {
     if (!settings) return;
-    settings.submitOnEnter = value;
+    settings[key] = value;
     void save();
   }
 
@@ -47,14 +47,28 @@
 
 <h3>{t('menuHeading')}</h3>
 {#if settings}
-  <label>
-    <input
-      type="checkbox"
-      checked={settings.submitOnEnter}
-      onchange={(e) => setSubmitOnEnter(e.currentTarget.checked)}
-    />
-    <span>{t('submitOnEnter')}</span>
-  </label>
+  <ul>
+    <li>
+      <label>
+        <input
+          type="checkbox"
+          checked={settings.hideUnregistered}
+          onchange={(e) => setFlag('hideUnregistered', e.currentTarget.checked)}
+        />
+        <span>{t('hideUnregistered')}</span>
+      </label>
+    </li>
+    <li>
+      <label>
+        <input
+          type="checkbox"
+          checked={settings.submitOnEnter}
+          onchange={(e) => setFlag('submitOnEnter', e.currentTarget.checked)}
+        />
+        <span>{t('submitOnEnter')}</span>
+      </label>
+    </li>
+  </ul>
 {/if}
 
 <h3>{t('modsHeading')}</h3>

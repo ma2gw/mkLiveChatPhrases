@@ -1,5 +1,33 @@
-import { describe, expect, it } from 'vitest';
-import { isTargetPage, parseChannelHref } from '../entrypoints/content/youtube';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { fakeBrowser } from 'wxt/testing/fake-browser';
+import { isTargetPage, parseChannelHref, shouldShowMenu } from '../entrypoints/content/youtube';
+import { loadMenuHidden, saveMenuHidden } from '../lib/storage/menuHidden';
+
+describe('メニューを出すかどうか', () => {
+  const base = { targetPage: true, hidden: false, hideUnregistered: false, registered: false };
+  it('出すページで、隠していなければ出す（未登録でも）', () => {
+    expect(shouldShowMenu(base)).toBe(true);
+  });
+  it('出すページでなければ出さない', () => {
+    expect(shouldShowMenu({ ...base, targetPage: false })).toBe(false);
+  });
+  it('ツールバーのアイコンで隠していれば、登録済みでも出さない', () => {
+    expect(shouldShowMenu({ ...base, hidden: true, registered: true })).toBe(false);
+  });
+  it('「未登録では出さない」がオンなら、登録済みのチャンネルでだけ出す', () => {
+    expect(shouldShowMenu({ ...base, hideUnregistered: true })).toBe(false);
+    expect(shouldShowMenu({ ...base, hideUnregistered: true, registered: true })).toBe(true);
+  });
+});
+
+describe('メニューを隠しているかの保存', () => {
+  beforeEach(() => fakeBrowser.reset());
+  it('何も保存されていなければ隠していない。保存したものを読める', async () => {
+    expect(await loadMenuHidden()).toBe(false);
+    await saveMenuHidden(true);
+    expect(await loadMenuHidden()).toBe(true);
+  });
+});
 import { findChannel } from '../lib/model/match';
 import { channelDisplayName, createEmptyData, newId, type Channel } from '../lib/model/types';
 

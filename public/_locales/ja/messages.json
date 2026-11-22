@@ -79,6 +79,14 @@
     "message": "定型文を読み込めませんでした。",
     "description": "保存されたデータを読めなかったときの表示"
   },
+  "actionHideMenu": {
+    "message": "メニューを隠す",
+    "description": "ツールバーの拡張機能アイコンのツールチップ（メニューを出しているとき）"
+  },
+  "actionShowMenu": {
+    "message": "メニューを表示する",
+    "description": "ツールバーの拡張機能アイコンのツールチップ（メニューを隠しているとき）"
+  },
   "registerChannel": {
     "message": "このチャンネルを登録する",
     "description": "メニューの「未登録」のツールチップ"
@@ -106,8 +114,9 @@
   "globalPhrasesLong": { "message": "全チャンネル共通", "description": "編集画面: 一覧の、共通フレーズの行" },
   "modsHeading": { "message": "mod", "description": "編集画面: 設定の mod の見出し" },
   "modsHelp": { "message": "メニューに表示する mod を選びます。", "description": "編集画面: 設定の mod の説明" },
-  "settingsHelp": { "message": "設定の変更はすぐに保存され、メニューに反映されます。", "description": "編集画面: 設定の説明" },
+  "settingsHelp": { "message": "設定は自動で保存されます。保存ボタンを押す必要はありません。", "description": "編集画面: 設定の説明" },
   "menuHeading": { "message": "メニュー", "description": "編集画面: 設定のメニューの見出し" },
+  "hideUnregistered": { "message": "未登録のチャンネルではメニューを出さない", "description": "編集画面: 未登録のチャンネルでメニューを出さない設定" },
   "submitOnEnter": { "message": "+ で追加するとき、Enter で確定する", "description": "編集画面: Enter で追加する設定" },
   "settingsSaveFailed": { "message": "設定を保存できませんでした。", "description": "編集画面: 設定を保存できなかったとき" },
 

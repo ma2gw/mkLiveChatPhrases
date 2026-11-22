@@ -11,11 +11,12 @@
 import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
 import { addPhraseToChannel } from '../../lib/model/edit';
 import { findChannel } from '../../lib/model/match';
-import { loadSettings, watchSettings } from '../../lib/storage/settings';
+import { loadMenuHidden, watchMenuHidden } from '../../lib/storage/menuHidden';
+import { defaultSettings, loadSettings, watchSettings, type Settings } from '../../lib/storage/settings';
 import { NewerSchemaVersionError, loadData, saveData, watchData } from '../../lib/storage/sync';
 import { createMenu, type MenuHandlers, type MenuState } from './menu';
 import styleText from './style.css?inline';
-import { getPageChannel, isTargetPage, watchPage } from './youtube';
+import { getPageChannel, isTargetPage, shouldShowMenu, watchPage } from './youtube';
 
 export default defineContentScript({
   matches: ['*://www.youtube.com/*'],
@@ -100,10 +101,21 @@ export default defineContentScript({
     // メニューを押したときにも確かめる（isValid は、無効なら onInvalidated を呼ぶ）
     ui.shadowHost.addEventListener('pointerdown', () => void ctx.isValid, { capture: true });
 
+    /** ツールバーのアイコンで隠しているか */
+    let hidden = await loadMenuHidden();
+    let settings: Settings = defaultSettings();
+
     const refresh = () => {
       if (!ctx.isValid) return;
-      const visible = isTargetPage(location);
-      menu.update({ visible, page: visible ? getPageChannel() : null, data, loadError });
+      const targetPage = isTargetPage(location);
+      const page = targetPage ? getPageChannel() : null;
+      const visible = shouldShowMenu({
+        targetPage,
+        hidden,
+        hideUnregistered: settings.hideUnregistered,
+        registered: !!(data && page && findChannel(data, page)),
+      });
+      menu.update({ visible, page, data, loadError });
     };
 
     const applyLoaded = (result: Promise<MenuState['data']>) =>
@@ -123,9 +135,23 @@ export default defineContentScript({
     // 編集画面や別の PC でデータが変わったら、メニューに反映する
     cleanup(watchData((d) => void applyLoaded(Promise.resolve(d))));
 
-    // 設定（有効にした mod、Enter で追加するか）を反映し、編集画面や別の PC で変わったら反映し直す
-    void loadSettings().then((s) => menu.applySettings(s));
-    cleanup(watchSettings((s) => menu.applySettings(s)));
+    // 設定（有効にした mod、Enter で追加するか、未登録では出さないか）を反映し、
+    // 編集画面や別の PC で変わったら反映し直す
+    const applySettings = (s: Settings) => {
+      settings = s;
+      menu.applySettings(s);
+      refresh();
+    };
+    void loadSettings().then(applySettings);
+    cleanup(watchSettings(applySettings));
+
+    // ツールバーのアイコンで隠したり出したりしたら、すべてのタブで反映する
+    cleanup(
+      watchMenuHidden((h) => {
+        hidden = h;
+        refresh();
+      }),
+    );
 
     watchPage(ctx, refresh);
   },

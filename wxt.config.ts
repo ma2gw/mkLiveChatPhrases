@@ -21,6 +21,8 @@ export default defineConfig({
     default_locale: 'en',
     // 権限は最小限にする（ホスト権限は content script の matches から youtube.com だけになる）
     permissions: ['storage'],
+    // ツールバーのアイコン。ポップアップは出さず、押すとメニューを隠す / 出す（background の action.onClicked）
+    action: { default_title: '__MSG_actionHideMenu__' },
     ...(localKey ? { key: localKey } : {}),
   },
   webExt: {

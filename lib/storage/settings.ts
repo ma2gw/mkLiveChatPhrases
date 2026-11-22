@@ -15,12 +15,17 @@ export interface Settings {
    * 誤って追加しないように、初期値はオフ（✓ ボタンだけで追加する）
    */
   submitOnEnter: boolean;
+  /**
+   * 登録していないチャンネル（チャンネルが分からないときも含む）では、メニューを出さない
+   * 初期値はオフ（初めて使う人が「未登録」から登録する流れに気づけるように）
+   */
+  hideUnregistered: boolean;
 }
 
 const KEY = 'settings';
 
 export function defaultSettings(): Settings {
-  return { enabledMods: [], submitOnEnter: false };
+  return { enabledMods: [], submitOnEnter: false, hideUnregistered: false };
 }
 
 /** 読めないときや、形が違うときは初期値にする（項目ごとに） */
@@ -29,6 +34,7 @@ function parseSettings(value: unknown): Settings {
   return {
     enabledMods: Array.isArray(v?.enabledMods) ? v.enabledMods.filter((x): x is string => typeof x === 'string') : [],
     submitOnEnter: v?.submitOnEnter === true,
+    hideUnregistered: v?.hideUnregistered === true,
   };
 }
 

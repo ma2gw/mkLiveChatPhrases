@@ -79,6 +79,14 @@
     "message": "Could not load your phrases.",
     "description": "Shown when stored data cannot be loaded"
   },
+  "actionHideMenu": {
+    "message": "Hide the menu",
+    "description": "Tooltip of the toolbar icon (when the menu is shown)"
+  },
+  "actionShowMenu": {
+    "message": "Show the menu",
+    "description": "Tooltip of the toolbar icon (when the menu is hidden)"
+  },
   "registerChannel": {
     "message": "Register this channel",
     "description": "Tooltip of the \"Not registered\" badge in the menu"
@@ -106,8 +114,9 @@
   "globalPhrasesLong": { "message": "All channels", "description": "Editor: row for phrases shared by all channels" },
   "modsHeading": { "message": "Mods", "description": "Editor: heading of the mods setting" },
   "modsHelp": { "message": "Choose which mods to show in the menu.", "description": "Editor: help text of the mods setting" },
-  "settingsHelp": { "message": "Settings are saved and applied to the menu immediately.", "description": "Editor: help text of the settings" },
+  "settingsHelp": { "message": "Settings are saved automatically. You don't need to press Save.", "description": "Editor: help text of the settings" },
   "menuHeading": { "message": "Menu", "description": "Editor: heading of the menu settings" },
+  "hideUnregistered": { "message": "Don't show the menu on channels that aren't registered", "description": "Editor: setting to hide the menu on unregistered channels" },
   "submitOnEnter": { "message": "Press Enter to confirm when adding with +", "description": "Editor: setting to add a phrase with Enter" },
   "settingsSaveFailed": { "message": "Could not save the settings.", "description": "Editor: shown when settings could not be saved" },
 

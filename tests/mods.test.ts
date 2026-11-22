@@ -27,21 +27,21 @@ describe('設定の保存と読み込み', () => {
   beforeEach(() => fakeBrowser.reset());
 
   it('何も保存されていなければ、どの mod も無効で、Enter では追加しない', async () => {
-    expect(await loadSettings()).toEqual({ enabledMods: [], submitOnEnter: false });
+    expect(await loadSettings()).toEqual({ enabledMods: [], submitOnEnter: false, hideUnregistered: false });
   });
 
   it('保存したものを読める。形が違えば初期値にする', async () => {
-    await saveSettings({ enabledMods: ['reverse'], submitOnEnter: true });
-    expect(await loadSettings()).toEqual({ enabledMods: ['reverse'], submitOnEnter: true });
+    await saveSettings({ enabledMods: ['reverse'], submitOnEnter: true, hideUnregistered: true });
+    expect(await loadSettings()).toEqual({ enabledMods: ['reverse'], submitOnEnter: true, hideUnregistered: true });
     await fakeBrowser.storage.sync.set({ settings: { enabledMods: 'broken', submitOnEnter: 'yes' } });
-    expect(await loadSettings()).toEqual({ enabledMods: [], submitOnEnter: false });
+    expect(await loadSettings()).toEqual({ enabledMods: [], submitOnEnter: false, hideUnregistered: false });
   });
 
   it('フレーズのデータを保存しても、設定は消えない', async () => {
-    await saveSettings({ enabledMods: ['reverse'], submitOnEnter: true });
+    await saveSettings({ enabledMods: ['reverse'], submitOnEnter: true, hideUnregistered: true });
     const r = await saveData(createEmptyData());
     expect(r.ok).toBe(true);
-    expect(await loadSettings()).toEqual({ enabledMods: ['reverse'], submitOnEnter: true });
+    expect(await loadSettings()).toEqual({ enabledMods: ['reverse'], submitOnEnter: true, hideUnregistered: true });
   });
 });
 
