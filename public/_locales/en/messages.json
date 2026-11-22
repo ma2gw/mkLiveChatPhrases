@@ -11,22 +11,6 @@
     "message": "Phrases",
     "description": "Tooltip and label of the floating icon"
   },
-  "reverse": {
-    "message": "Copy reversed",
-    "description": "Tooltip and label of the reverse button"
-  },
-  "repeat2": {
-    "message": "Copy repeated twice",
-    "description": "Tooltip and label of the ×2 button"
-  },
-  "repeat3": {
-    "message": "Copy repeated three times",
-    "description": "Tooltip and label of the ×3 button"
-  },
-  "appendDot": {
-    "message": "Copy with a period at the end",
-    "description": "Tooltip and label of the toggle that appends a period to copied text"
-  },
   "collapseMenu": {
     "message": "Collapse",
     "description": "Tooltip and label of the button that collapses the menu back to the icon"
@@ -113,7 +97,7 @@
   "phrasesTab": { "message": "Phrases", "description": "Editor: tab of the phrase list" },
   "globalPhrasesLong": { "message": "All channels", "description": "Editor: row for phrases shared by all channels" },
   "appearanceHeading": { "message": "Appearance", "description": "Editor: heading of the appearance settings" },
-  "appearanceHelp": { "message": "The header and toolbar colors are made from the menu color. Text is white or black depending on the background.", "description": "Editor: help text of the appearance settings" },
+  "appearanceHelp": { "message": "The header and button colors are made from the menu color. Text is white or black depending on the background.", "description": "Editor: help text of the appearance settings" },
   "menuColor": { "message": "Menu color", "description": "Editor: menu color field" },
   "borderColor": { "message": "Border color", "description": "Editor: border color field" },
   "iconColor": { "message": "Icon color (when collapsed)", "description": "Editor: color of the collapsed icon" },
@@ -122,8 +106,6 @@
   "autoFromMenu": { "message": "Auto (made from the menu color)", "description": "Editor: shown when the border color is auto" },
   "defaultValue": { "message": "Default", "description": "Editor: shown when a color is the default" },
   "resetToDefault": { "message": "Reset", "description": "Editor: button to reset an appearance setting" },
-  "modsHeading": { "message": "Mods", "description": "Editor: heading of the mods setting" },
-  "modsHelp": { "message": "Choose which mods to show in the menu.", "description": "Editor: help text of the mods setting" },
   "settingsHelp": { "message": "Settings are saved automatically. You don't need to press Save.", "description": "Editor: help text of the settings" },
   "menuHeading": { "message": "Menu", "description": "Editor: heading of the menu settings" },
   "hideUnregistered": { "message": "Don't show the menu on channels that aren't registered", "description": "Editor: setting to hide the menu on unregistered channels" },

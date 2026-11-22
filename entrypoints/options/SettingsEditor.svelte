@@ -3,12 +3,10 @@
    * 右側: 設定
    * - メニュー（未登録では出さない、Enter で確定）
    * - 見た目（メニューの色、ボーダーの色、アイコンの色、背景の不透明度）
-   * - mod の有効 / 無効（無効にした mod はメニューに出ない）
    * 設定はフレーズのデータとは別で、チェックを変えたらすぐに保存する（保存ボタンは使わない）
    */
   import { onDestroy } from 'svelte';
   import { t } from '../../lib/i18n';
-  import { MODS } from '../../lib/mods';
   import {
     loadSettings,
     OPACITY_MAX,
@@ -24,14 +22,6 @@
   loadSettings().then((s) => (settings = s));
   // 別のタブや PC で変わったら反映する
   onDestroy(watchSettings((s) => (settings = s)));
-
-  function setEnabled(id: string, enabled: boolean) {
-    if (!settings) return;
-    const ids = settings.enabledMods.filter((x) => x !== id);
-    if (enabled) ids.push(id);
-    settings.enabledMods = ids;
-    void save();
-  }
 
   function setFlag(key: 'submitOnEnter' | 'hideUnregistered', value: boolean) {
     if (!settings) return;
@@ -154,27 +144,6 @@
   </div>
 {/if}
 
-<h3>{t('modsHeading')}</h3>
-<p class="muted">{t('modsHelp')}</p>
-
-{#if settings}
-  <ul>
-    {#each MODS as mod (mod.id)}
-      <li>
-        <label>
-          <input
-            type="checkbox"
-            checked={settings.enabledMods.includes(mod.id)}
-            onchange={(e) => setEnabled(mod.id, e.currentTarget.checked)}
-          />
-          <span class="mod-label">{mod.label}</span>
-          <span>{t(mod.messageKey)}</span>
-        </label>
-      </li>
-    {/each}
-  </ul>
-{/if}
-
 {#if failed}
   <p class="error">{t('settingsSaveFailed')}</p>
 {/if}
@@ -193,14 +162,6 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
-  }
-  .mod-label {
-    min-width: 32px;
-    padding: 0 6px;
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    font-weight: bold;
-    text-align: center;
   }
   .muted {
     color: var(--muted);

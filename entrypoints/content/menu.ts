@@ -8,14 +8,11 @@
  * - 開いていても閉じていても、全体をドラッグで動かせる（フレーズと格納ボタンはクリックを優先）
  * - 位置と開閉の状態は保存し、読み込み直しても同じ状態で表示する
  * - フレーズは「共通 → チャンネル」の順に並べ、クリックでクリップボードにコピーする
- * - コピーボタンの並びの下の行で mod を切り替える。オンの mod をかけてからコピーする（状態は保存しない）
- *   mod の一覧と中身は lib/mods/
  * - 並びの最後の + で、このチャンネルにフレーズを追加できる（ラベルなし。未登録ならチャンネルも登録する）
  */
 import { findChannel, type PageChannel } from '../../lib/model/match';
 import { channelDisplayName, formatHandle, type Phrase, type PhraseData } from '../../lib/model/types';
 import { t } from '../../lib/i18n';
-import { afterCopy, applyMods, enabledMods, toggleMod, type Mod } from '../../lib/mods';
 import { textColorFor } from '../../lib/color';
 import type { Appearance, Settings } from '../../lib/storage/settings';
 import { copyText } from './clipboard';
@@ -54,7 +51,7 @@ const MARGIN = 8;
 const DRAG_THRESHOLD = 4;
 const FLASH_MS = 600;
 /** ドラッグを始めない要素（クリックを優先する） */
-const NO_DRAG = '.lcp-phrase, .lcp-collapse, .lcp-badge, .lcp-mod, .lcp-add, .lcp-add-form';
+const NO_DRAG = '.lcp-phrase, .lcp-collapse, .lcp-badge, .lcp-add, .lcp-add-form';
 
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, text?: string): HTMLElementTagNameMap[K] {
@@ -120,14 +117,9 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
   header.append(channelArea, edit, collapse);
   const body = el('div', 'lcp-body');
 
-  // 見出しの下のツールバー: mod の切り替え（オンのときは色が付く）。中身は renderModBar で作る
-  const modBar = el('div', 'lcp-mods');
-  const modButtons = new Map<string, HTMLButtonElement>();
-
   const status = el('div', 'lcp-status');
   status.setAttribute('aria-live', 'polite');
-  // mod の行は見出しのすぐ下（フレーズの上）に、ツールバーとして置く
-  panel.append(header, modBar, body, status);
+  panel.append(header, body, status);
 
   root.append(icon, panel);
   container.appendChild(root);
@@ -210,37 +202,6 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
     void saveWidgetState(widget);
   };
 
-  // オンになっている mod の id。保存はしない（ページを読み込み直したらオフに戻る）
-  let activeMods: ReadonlySet<string> = new Set();
-  function setActiveMods(next: ReadonlySet<string>) {
-    activeMods = next;
-    for (const [id, button] of modButtons) button.setAttribute('aria-pressed', String(activeMods.has(id)));
-  }
-
-  /** 有効な mod のボタンを並べ直す（設定で無効にした mod は出さない。1 つもなければ行ごと隠す） */
-  function renderModBar(mods: readonly Mod[]) {
-    modButtons.clear();
-    // 左端に「mod」と書き、フレーズの並びではないことが分かるようにする
-    modBar.replaceChildren(el('span', 'lcp-mods-label', 'mod'));
-    for (const mod of mods) {
-      const label = t(mod.messageKey);
-      // 1 回でオフに戻る mod は、オンのときの色を変える
-      const button = el('button', mod.once ? 'lcp-mod lcp-mod-once' : 'lcp-mod', mod.label);
-      button.type = 'button';
-      button.setAttribute('aria-label', label);
-      button.title = label;
-      // 同じ group のほかの mod は toggleMod がオフにする
-      button.addEventListener('click', () => setActiveMods(toggleMod(activeMods, mod.id)));
-      modButtons.set(mod.id, button);
-      modBar.append(button);
-    }
-    modBar.hidden = mods.length === 0;
-    // 無効にされた mod がオンのまま残らないようにする
-    setActiveMods(new Set([...activeMods].filter((id) => modButtons.has(id))));
-  }
-  // 設定を読むまでは、どの mod も出さない（初期値はどれも無効）
-  renderModBar([]);
-
   void loadWidgetState().then((saved) => {
     widget = saved;
     dir = directionFromIcon();
@@ -314,9 +275,7 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
     button.type = 'button';
     button.title = phrase.text;
     button.addEventListener('click', async () => {
-      const ok = await copyText(applyMods(phrase.text, activeMods), root);
-      // 1 回だけの mod（once）は、コピーできたらオフに戻す
-      if (ok) setActiveMods(afterCopy(activeMods));
+      const ok = await copyText(phrase.text, root);
       button.classList.remove('lcp-copied', 'lcp-failed');
       button.classList.add(ok ? 'lcp-copied' : 'lcp-failed');
       // うまくいったときはボタンの色だけで知らせる。失敗したときは、どうすればよいかを出す
@@ -527,10 +486,9 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
       if (widget.open) render(wasHidden);
       if (wasHidden && !root.hidden) place();
     },
-    /** 設定（無効にした mod、Enter で追加するか）を反映する */
+    /** 設定（見た目、Enter で追加するか）を反映する */
     applySettings(settings: Settings) {
       applyAppearance(settings.appearance);
-      renderModBar(enabledMods(settings.enabledMods));
       if (submitOnEnter !== settings.submitOnEnter) {
         submitOnEnter = settings.submitOnEnter;
         // 入力欄の案内の文を変えるために作り直す

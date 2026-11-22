@@ -20,7 +20,7 @@ export interface Appearance {
   borderColor?: string;
   /** 閉じているときの丸いアイコンの色。省略したら緑 */
   iconColor?: string;
-  /** 背景（見出し、ツールバー、フレーズの欄）の不透明度。0〜100（%）。0 なら背景は見えなくなる（文字とボタンは残る） */
+  /** 背景（見出しとフレーズの欄）の不透明度。0〜100（%）。0 なら背景は見えなくなる（文字とボタンは残る） */
   opacity: number;
 }
 
@@ -28,11 +28,6 @@ export const OPACITY_MIN = 0;
 export const OPACITY_MAX = 100;
 
 export interface Settings {
-  /**
-   * 有効にした mod の id（メニューにボタンを出す）
-   * 初期値は空 = どの mod も無効（初めて使う人のメニューをすっきりさせるため）。新しく足した mod も最初は無効
-   */
-  enabledMods: string[];
   /**
    * メニューの + の入力欄で、Enter を押したら追加する（変換中の Enter は除く）
    * 誤って追加しないように、初期値はオフ（✓ ボタンだけで追加する）
@@ -50,7 +45,7 @@ export interface Settings {
 const KEY = 'settings';
 
 export function defaultSettings(): Settings {
-  return { enabledMods: [], submitOnEnter: false, hideUnregistered: false, appearance: { opacity: OPACITY_MAX } };
+  return { submitOnEnter: false, hideUnregistered: false, appearance: { opacity: OPACITY_MAX } };
 }
 
 /** 見た目を読む。色が '#rrggbb' でなければ省略（自動）、不透明度は 0〜100 に収める */
@@ -72,7 +67,6 @@ function parseAppearance(value: unknown): Appearance {
 function parseSettings(value: unknown): Settings {
   const v = value as Partial<Settings> | undefined;
   return {
-    enabledMods: Array.isArray(v?.enabledMods) ? v.enabledMods.filter((x): x is string => typeof x === 'string') : [],
     submitOnEnter: v?.submitOnEnter === true,
     hideUnregistered: v?.hideUnregistered === true,
     appearance: parseAppearance(v?.appearance),
