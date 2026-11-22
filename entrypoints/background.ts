@@ -25,14 +25,15 @@ export default defineBackground(() => {
   // ---------------------------------------------------------------------------
   // メニューから頼まれたら、編集画面をタブで開く（tabs.create に権限は要らない）
   // - channelId: そのチャンネルを選んだ状態で開く（#channel=<id>）
-  // - newChannel: そのハンドルとチャンネル ID を入れたチャンネルを作った状態で開く（#new&handle=…&uc=…）
+  // - newChannel: そのサイト、ハンドル、チャンネル ID を入れたチャンネルを作った状態で開く
+  //   （#new&site=…&handle=…&id=…）
   // ---------------------------------------------------------------------------
 
   browser.runtime.onMessage.addListener((message: unknown) => {
     const m = message as {
       type?: string;
       channelId?: unknown;
-      newChannel?: { handle?: unknown; youtubeChannelId?: unknown };
+      newChannel?: { site?: unknown; handle?: unknown; siteChannelId?: unknown };
     } | null;
     if (m?.type !== 'openEditor') return;
 
@@ -41,8 +42,9 @@ export default defineBackground(() => {
       params.set('channel', m.channelId);
     } else if (m.newChannel) {
       params.set('new', '');
+      if (typeof m.newChannel.site === 'string') params.set('site', m.newChannel.site);
       if (typeof m.newChannel.handle === 'string') params.set('handle', m.newChannel.handle);
-      if (typeof m.newChannel.youtubeChannelId === 'string') params.set('uc', m.newChannel.youtubeChannelId);
+      if (typeof m.newChannel.siteChannelId === 'string') params.set('id', m.newChannel.siteChannelId);
     }
     const hash = params.size > 0 ? `#${params}` : '';
     void browser.tabs.create({ url: browser.runtime.getURL(`/options.html${hash}`) });

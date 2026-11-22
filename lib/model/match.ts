@@ -1,28 +1,34 @@
 /**
  * 見ているページのチャンネルから、登録されたチャンネルを探す
  */
-import type { Channel, PhraseData } from './types';
+import type { Channel, PhraseData, Site } from './types';
 import { handleKey } from './validate';
 
-/** ページから分かったチャンネルの情報（どちらか片方しか分からないこともある） */
+/** ページから分かったチャンネルの情報（ハンドルとチャンネル ID は、どちらか片方しか分からないこともある） */
 export interface PageChannel {
+  /** どのサイトのページか */
+  site: Site;
   /** '@' を外し、decode したハンドル */
   handle?: string;
-  /** 'UC...' */
-  youtubeChannelId?: string;
+  /** サイトのチャンネル ID（YouTube なら 'UC...'） */
+  siteChannelId?: string;
 }
 
-/** YouTube のチャンネル ID を優先し、なければハンドルで探す */
+/** ページのサイトのアカウントを見て、チャンネル ID を優先し、なければハンドルで探す */
 export function findChannel(data: PhraseData, page: PageChannel): Channel | undefined {
   const channels = Object.values(data.channels);
-  const { youtubeChannelId, handle } = page;
-  if (youtubeChannelId) {
-    const found = channels.find((c) => c.youtubeChannelId === youtubeChannelId);
+  const accountOf = (c: Channel) => c.accounts[page.site];
+  const { siteChannelId, handle } = page;
+  if (siteChannelId) {
+    const found = channels.find((c) => accountOf(c)?.siteChannelId === siteChannelId);
     if (found) return found;
   }
   if (handle) {
     const key = handleKey(handle);
-    return channels.find((c) => c.handle !== undefined && handleKey(c.handle) === key);
+    return channels.find((c) => {
+      const h = accountOf(c)?.handle;
+      return h !== undefined && handleKey(h) === key;
+    });
   }
   return undefined;
 }

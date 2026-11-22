@@ -133,7 +133,7 @@
   "channelName": { "message": "Name", "description": "Editor: channel name field" },
   "channelNamePlaceholder": { "message": "Defaults to the handle", "description": "Editor: placeholder of the channel name field" },
   "handle": { "message": "Handle", "description": "Editor: handle field" },
-  "youtubeChannelId": { "message": "Channel ID", "description": "Editor: YouTube channel ID (UC...) field" },
+  "siteChannelId": { "message": "Channel ID", "description": "Editor: YouTube channel ID (UC...) field" },
   "group": { "message": "Group", "description": "Editor: group of the channel" },
   "phrases": { "message": "Phrases", "description": "Editor: phrases heading" },
   "deleteChannel": { "message": "Delete channel", "description": "Editor: button to delete a channel" },
@@ -169,7 +169,7 @@
     "description": "Editor error",
     "placeholders": { "handle": { "content": "$1" } }
   },
-  "errDuplicateYoutubeChannelId": {
+  "errDuplicateSiteChannelId": {
     "message": "The channel ID $ID$ is registered to two channels.",
     "description": "Editor error",
     "placeholders": { "id": { "content": "$1" } }

@@ -32,15 +32,20 @@ import { findChannel } from '../lib/model/match';
 import { channelDisplayName, createEmptyData, newId, type Channel } from '../lib/model/types';
 
 describe('チャンネルの表示名', () => {
-  const base: Channel = { id: 'x', phrases: [] };
+  const base: Channel = { id: 'x', accounts: {}, phrases: [] };
   it('name があれば name', () => {
-    expect(channelDisplayName({ ...base, name: '名前', handle: 'foo' })).toBe('名前');
+    expect(channelDisplayName({ ...base, name: '名前', accounts: { youtube: { handle: 'foo' } } })).toBe('名前');
   });
   it('name がなければハンドル', () => {
-    expect(channelDisplayName({ ...base, handle: 'foo', youtubeChannelId: 'UCabcdefghijklmnopqrstuv' })).toBe('@foo');
+    const accounts = { youtube: { handle: 'foo', siteChannelId: 'UCabcdefghijklmnopqrstuv' } };
+    expect(channelDisplayName({ ...base, accounts })).toBe('@foo');
   });
-  it('ハンドルもなければ YouTube のチャンネル ID', () => {
-    expect(channelDisplayName({ ...base, youtubeChannelId: 'UCabcdefghijklmnopqrstuv' })).toBe('UCabcdefghijklmnopqrstuv');
+  it('ハンドルもなければチャンネル ID', () => {
+    const accounts = { youtube: { siteChannelId: 'UCabcdefghijklmnopqrstuv' } };
+    expect(channelDisplayName({ ...base, accounts })).toBe('UCabcdefghijklmnopqrstuv');
+  });
+  it('アカウントがなければ空', () => {
+    expect(channelDisplayName(base)).toBe('');
   });
 });
 
@@ -59,11 +64,11 @@ describe('メニューを出すページ', () => {
 
 describe('チャンネルへのリンクを読む', () => {
   it.each([
-    ['/@foo', { handle: 'foo' }],
-    ['/@foo/videos', { handle: 'foo' }],
-    ['https://www.youtube.com/@foo', { handle: 'foo' }],
-    ['/@%E3%83%86%E3%82%B9%E3%83%88', { handle: 'テスト' }],
-    ['/channel/UCabcdefghijklmnopqrstuv', { youtubeChannelId: 'UCabcdefghijklmnopqrstuv' }],
+    ['/@foo', { site: 'youtube', handle: 'foo' }],
+    ['/@foo/videos', { site: 'youtube', handle: 'foo' }],
+    ['https://www.youtube.com/@foo', { site: 'youtube', handle: 'foo' }],
+    ['/@%E3%83%86%E3%82%B9%E3%83%88', { site: 'youtube', handle: 'テスト' }],
+    ['/channel/UCabcdefghijklmnopqrstuv', { site: 'youtube', siteChannelId: 'UCabcdefghijklmnopqrstuv' }],
     ['/watch?v=abc', null],
     ['/@', null],
   ])('%s', (href, expected) => {
@@ -72,8 +77,12 @@ describe('チャンネルへのリンクを読む', () => {
 });
 
 describe('登録されたチャンネルを探す', () => {
-  const ch: Channel = { id: newId(), handle: 'FooBar', youtubeChannelId: 'UCabcdefghijklmnopqrstuv', phrases: [] };
-  const ucOnly: Channel = { id: newId(), youtubeChannelId: 'UCzzzzzzzzzzzzzzzzzzzzzz', phrases: [] };
+  const ch: Channel = {
+    id: newId(),
+    accounts: { youtube: { handle: 'FooBar', siteChannelId: 'UCabcdefghijklmnopqrstuv' } },
+    phrases: [],
+  };
+  const ucOnly: Channel = { id: newId(), accounts: { youtube: { siteChannelId: 'UCzzzzzzzzzzzzzzzzzzzzzz' } }, phrases: [] };
   const data = createEmptyData();
   for (const c of [ch, ucOnly]) {
     data.channels[c.id] = c;
@@ -81,14 +90,14 @@ describe('登録されたチャンネルを探す', () => {
   }
 
   it('大文字と小文字が違ってもハンドルで見つかる', () => {
-    expect(findChannel(data, { handle: 'foobar' })).toBe(ch);
+    expect(findChannel(data, { site: 'youtube', handle: 'foobar' })).toBe(ch);
   });
   it('YouTube のチャンネル ID で見つかる', () => {
-    expect(findChannel(data, { youtubeChannelId: 'UCabcdefghijklmnopqrstuv' })).toBe(ch);
-    expect(findChannel(data, { youtubeChannelId: 'UCzzzzzzzzzzzzzzzzzzzzzz' })).toBe(ucOnly);
+    expect(findChannel(data, { site: 'youtube', siteChannelId: 'UCabcdefghijklmnopqrstuv' })).toBe(ch);
+    expect(findChannel(data, { site: 'youtube', siteChannelId: 'UCzzzzzzzzzzzzzzzzzzzzzz' })).toBe(ucOnly);
   });
   it('登録されていなければ undefined', () => {
-    expect(findChannel(data, { handle: 'other' })).toBeUndefined();
-    expect(findChannel(data, {})).toBeUndefined();
+    expect(findChannel(data, { site: 'youtube', handle: 'other' })).toBeUndefined();
+    expect(findChannel(data, { site: 'youtube' })).toBeUndefined();
   });
 });

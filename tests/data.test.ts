@@ -1,15 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import { createEmptyData, newId, type Channel, type PhraseData } from '../lib/model/types';
-import { checkRules, handleKey, normalizeHandle } from '../lib/model/validate';
+import { findChannel } from '../lib/model/match';
+import { createEmptyData, newId, type Channel, type PhraseData, type Site, type SiteAccount } from '../lib/model/types';
+import { checkRules, handleKey, normalizeHandle, parseChannel, type DataError } from '../lib/model/validate';
 import { exportToJson, importFromJson } from '../lib/storage/importExport';
 import { joinFromSync, loadData, NewerSchemaVersionError, saveData, splitForSync } from '../lib/storage/sync';
 
+/** YouTube のアカウント（ハンドル）を 1 つ持つチャンネルを作る */
 function makeChannel(handle: string, phraseCount = 1): Channel {
   return {
     id: newId(),
     name: handle,
-    handle,
+    accounts: { youtube: { handle } },
     phrases: Array.from({ length: phraseCount }, (_, i) => ({ id: newId(), text: `${handle} ${i}` })),
   };
 }
@@ -49,7 +51,7 @@ describe('JSON のエクスポートとインポート', () => {
   it('エクスポートしたものをインポートすると元に戻る', () => {
     const grouped = makeChannel('grouped', 2);
     grouped.phrases[0]!.label = 'label';
-    grouped.youtubeChannelId = 'UCabcdefghijklmnopqrstuv';
+    grouped.accounts.youtube!.siteChannelId = 'UCabcdefghijklmnopqrstuv';
     const ungrouped = makeChannel('ungrouped');
     delete ungrouped.name; // 名前を省略したチャンネル
     const data = makeData(grouped, ungrouped);
@@ -88,9 +90,9 @@ describe('決まりのチェック', () => {
     expect(checkRules(data).map((e) => e.code).sort()).toEqual(['channelPlacement', 'channelPlacement']);
   });
 
-  it('ハンドルも YouTube のチャンネル ID もないチャンネルはエラーにする', () => {
+  it('どのサイトにもハンドルもチャンネル ID もないチャンネルはエラーにする', () => {
     const ch = makeChannel('a');
-    delete ch.handle;
+    ch.accounts = {};
     expect(checkRules(makeData(ch))).toEqual([{ code: 'missingChannelKey', detail: ch.id }]);
   });
 
@@ -164,5 +166,64 @@ describe('キーどうしの整合が崩れたときの読み込み', () => {
     expect(data.groups[0]!.channelIds).toEqual([a.id]);
     expect(data.ungroupedChannelIds).toEqual([b.id]);
     expect(checkRules(data)).toEqual([]);
+  });
+});
+
+describe('サイト（Twitch などへの対応に備えて）', () => {
+  // 今は YouTube だけなので、別のサイトは仮の名前で試す
+  const OTHER = 'other';
+  const otherSite = OTHER as Site;
+  /** accounts を作る（仮のサイトは型の上では 'youtube' と同じになるので、文字列のキーで入れる） */
+  const accountsOf = (entries: Record<string, SiteAccount>) => entries as Channel['accounts'];
+
+  it('サイトのアカウントを読み、ハンドルを正規化する', () => {
+    const errors: DataError[] = [];
+    const v = { id: 'c1', accounts: { youtube: { handle: '@foo', siteChannelId: ' UCx ' } }, phrases: [] };
+    expect(parseChannel(v, 'c1', errors)).toEqual({
+      id: 'c1',
+      accounts: { youtube: { handle: 'foo', siteChannelId: 'UCx' } },
+      phrases: [],
+    });
+    expect(errors).toEqual([]);
+  });
+
+  it('accounts がないチャンネルは、形が違うものとして扱う', () => {
+    const errors: DataError[] = [];
+    expect(parseChannel({ id: 'c1', handle: 'foo', phrases: [] }, 'c1', errors)).toBeNull();
+    expect(errors.map((e) => e.code)).toEqual(['invalidShape']);
+  });
+
+  it('知らないサイトのアカウントは、形が違うものとして扱う', () => {
+    const errors: DataError[] = [];
+    const v = { id: 'c1', accounts: { unknown: { handle: 'foo' } }, phrases: [] };
+    expect(parseChannel(v, 'c1', errors)).toBeNull();
+    expect(errors.map((e) => e.code)).toEqual(['invalidShape']);
+  });
+
+  it('中身が空のアカウントは持たない', () => {
+    const errors: DataError[] = [];
+    const ch = parseChannel({ id: 'c1', accounts: { youtube: { handle: ' ' } }, phrases: [] }, 'c1', errors);
+    expect(ch?.accounts).toEqual({});
+  });
+
+  it('別のサイトに同じハンドルやチャンネル ID があっても、重複にしない', () => {
+    const a: Channel = { ...makeChannel('a'), accounts: { youtube: { handle: 'foo', siteChannelId: 'X1' } } };
+    const b: Channel = { ...makeChannel('b'), accounts: accountsOf({ [OTHER]: { handle: 'foo', siteChannelId: 'X1' } }) };
+    expect(checkRules(makeData(a, b))).toEqual([]);
+    // 同じサイトどうしなら重複になる（大文字と小文字は区別しない）
+    const c: Channel = { ...makeChannel('c'), accounts: { youtube: { handle: 'FOO' } } };
+    expect(checkRules(makeData(a, c))).toEqual([{ code: 'duplicateHandle', detail: 'foo' }]);
+  });
+
+  it('1 つのチャンネルが複数のサイトのアカウントを持ち、どのサイトのページからでも見つかる', () => {
+    const a: Channel = {
+      ...makeChannel('a'),
+      accounts: accountsOf({ youtube: { handle: 'yt_name' }, [OTHER]: { handle: 'other_name' } }),
+    };
+    const data = makeData(a);
+    expect(findChannel(data, { site: 'youtube', handle: 'yt_name' })).toBe(a);
+    expect(findChannel(data, { site: otherSite, handle: 'other_name' })).toBe(a);
+    // サイトが違えば、同じ名前でも見つからない
+    expect(findChannel(data, { site: 'youtube', handle: 'other_name' })).toBeUndefined();
   });
 });

@@ -2,7 +2,7 @@
   /** 右側: チャンネルの編集 */
   import { t } from '../../lib/i18n';
   import { deleteChannel, moveChannel, placeOf } from '../../lib/model/edit';
-  import { channelDisplayName } from '../../lib/model/types';
+  import { channelDisplayName, SITES, type Site, type SiteAccount } from '../../lib/model/types';
   import PhraseList from './PhraseList.svelte';
   import { editor } from './state.svelte';
 
@@ -19,12 +19,22 @@
     moveChannel(data, id, to, list.length);
   }
 
-  /** ハンドルの入力。先頭の @（や /@）は外す（保存するときにも外すが、入力欄に残ると表示が @@ になるため） */
-  function onHandleInput(input: HTMLInputElement) {
+  /** サイトの表示名と、チャンネル ID の欄の案内（対応するサイトが増えたら足す） */
+  const SITE_LABEL: Record<Site, string> = { youtube: 'YouTube' };
+  const ID_PLACEHOLDER: Record<Site, string> = { youtube: 'UC…' };
+
+  /** サイトのアカウントの欄を書き換える。アカウントがまだなければ作る（空になったものは保存するときに消える） */
+  function setAccount(site: Site, key: keyof SiteAccount, value: string) {
     if (!channel) return;
+    const account = (channel.accounts[site] ??= {});
+    account[key] = value;
+  }
+
+  /** ハンドルの入力。先頭の @（や /@）は外す（保存するときにも外すが、入力欄に残ると表示が @@ になるため） */
+  function onHandleInput(site: Site, input: HTMLInputElement) {
     const value = input.value.replace(/^\s*\/?@+/, '');
     if (value !== input.value) input.value = value;
-    channel.handle = value;
+    setAccount(site, 'handle', value);
   }
 
   function remove() {
@@ -43,23 +53,6 @@
       <input bind:value={channel.name} placeholder={t('channelNamePlaceholder')} />
     </label>
     <label>
-      <span>{t('handle')}</span>
-      <!-- @ は固定の文字として外に出し、入力欄には @ を入れない（@ 付きで入力・貼り付けしても、その場で外す） -->
-      <span class="handle-field">
-        <span class="at">@</span>
-        <input
-          value={channel.handle ?? ''}
-          oninput={(e) => onHandleInput(e.currentTarget)}
-          class:invalid={missingKey}
-          placeholder="handle"
-        />
-      </span>
-    </label>
-    <label>
-      <span>{t('youtubeChannelId')}</span>
-      <input bind:value={channel.youtubeChannelId} class:invalid={missingKey} placeholder="UC…" />
-    </label>
-    <label>
       <span>{t('group')}</span>
       <select value={placeOf(data, id) ?? ''} onchange={(e) => changeGroup(e.currentTarget.value)}>
         <option value="">{t('ungrouped')}</option>
@@ -68,6 +61,33 @@
         {/each}
       </select>
     </label>
+
+    <!-- サイトごとのアカウント（対応するサイトが増えたら、ここに欄が増える） -->
+    {#each SITES as site (site)}
+      <div class="site">{SITE_LABEL[site]}</div>
+      <label>
+        <span>{t('handle')}</span>
+        <!-- @ は固定の文字として外に出し、入力欄には @ を入れない（@ 付きで入力・貼り付けしても、その場で外す） -->
+        <span class="handle-field">
+          <span class="at">@</span>
+          <input
+            value={channel.accounts[site]?.handle ?? ''}
+            oninput={(e) => onHandleInput(site, e.currentTarget)}
+            class:invalid={missingKey}
+            placeholder="handle"
+          />
+        </span>
+      </label>
+      <label>
+        <span>{t('siteChannelId')}</span>
+        <input
+          value={channel.accounts[site]?.siteChannelId ?? ''}
+          oninput={(e) => setAccount(site, 'siteChannelId', e.currentTarget.value)}
+          class:invalid={missingKey}
+          placeholder={ID_PLACEHOLDER[site]}
+        />
+      </label>
+    {/each}
   </div>
 
   <h3>{t('phrases')}</h3>
@@ -93,6 +113,12 @@
   }
   .invalid {
     border-color: var(--danger);
+  }
+  /* サイトの見出し（2 列にまたがる） */
+  .site {
+    grid-column: 1 / -1;
+    margin-top: 10px;
+    font-weight: bold;
   }
   /* @ を入力欄の左に固定で出す */
   .handle-field {

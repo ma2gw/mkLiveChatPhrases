@@ -51,10 +51,10 @@ export function parseChannelHref(href: string): PageChannel | null {
   const handle = path.match(/^\/(@[^/]+)/)?.[1];
   if (handle) {
     const normalized = normalizeHandle(handle);
-    return normalized ? { handle: normalized } : null;
+    return normalized ? { site: 'youtube', handle: normalized } : null;
   }
-  const youtubeChannelId = path.match(/^\/channel\/(UC[\w-]+)/)?.[1];
-  return youtubeChannelId ? { youtubeChannelId } : null;
+  const siteChannelId = path.match(/^\/channel\/(UC[\w-]+)/)?.[1];
+  return siteChannelId ? { site: 'youtube', siteChannelId } : null;
 }
 
 /** 見ている動画のチャンネルを調べる。分からなければ null */

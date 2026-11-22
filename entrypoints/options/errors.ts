@@ -31,8 +31,8 @@ export function errorMessage(error: DataError, data: PhraseData | null): string 
       return t('errMissingChannelKey', channelName(detail));
     case 'duplicateHandle':
       return t('errDuplicateHandle', detail);
-    case 'duplicateYoutubeChannelId':
-      return t('errDuplicateYoutubeChannelId', detail);
+    case 'duplicateSiteChannelId':
+      return t('errDuplicateSiteChannelId', detail);
     case 'emptyPhrase':
       return t('errEmptyPhrase', ownerOfPhrase(detail));
     case 'itemTooLarge':

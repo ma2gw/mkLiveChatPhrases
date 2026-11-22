@@ -3,7 +3,16 @@
  *
  * エラーは文言ではなくコードで返す（画面に出すときに _locales から文言を引く）
  */
-import { SCHEMA_VERSION, type Channel, type Group, type Phrase, type PhraseData } from './types';
+import {
+  SCHEMA_VERSION,
+  SITES,
+  type Channel,
+  type Group,
+  type Phrase,
+  type PhraseData,
+  type Site,
+  type SiteAccount,
+} from './types';
 
 export type ErrorCode =
   /** JSON として読めない */
@@ -22,12 +31,12 @@ export type ErrorCode =
   | 'unknownChannelRef'
   /** コピーする文字列が空（空白だけを含む）のフレーズがある（detail にフレーズの id） */
   | 'emptyPhrase'
-  /** チャンネルにハンドルも YouTube のチャンネル ID もない（detail にチャンネルの id） */
+  /** チャンネルにハンドルもサイトのチャンネル ID もない（detail にチャンネルの id） */
   | 'missingChannelKey'
-  /** 同じハンドルが 2 つのチャンネルに登録されている（detail にハンドル） */
+  /** 同じサイトの同じハンドルが 2 つのチャンネルに登録されている（detail にハンドル） */
   | 'duplicateHandle'
-  /** 同じ YouTube のチャンネル ID が 2 つのチャンネルに登録されている（detail に ID） */
-  | 'duplicateYoutubeChannelId'
+  /** 同じサイトの同じチャンネル ID が 2 つのチャンネルに登録されている（detail に ID） */
+  | 'duplicateSiteChannelId'
   /** storage.sync の 1 項目 8KB を超える（detail にキー） */
   | 'itemTooLarge'
   /** storage.sync の全体 100KB を超える */
@@ -106,27 +115,48 @@ function parsePhrases(v: unknown, path: string, errors: DataError[]): Phrase[] |
   return phrases.every((p) => p !== null) ? phrases : null;
 }
 
+/**
+ * サイトのアカウントを読む。空の値は持たない（省略したときと同じ意味になるため）
+ * 中身が何もなければ undefined（アカウントなしと同じ）
+ */
+function parseAccount(v: Record<string, unknown>): SiteAccount | undefined {
+  const account: SiteAccount = {};
+  const handle = typeof v.handle === 'string' ? normalizeHandle(v.handle) : '';
+  if (handle) account.handle = handle;
+  const siteChannelId = typeof v.siteChannelId === 'string' ? v.siteChannelId.trim() : '';
+  if (siteChannelId) account.siteChannelId = siteChannelId;
+  return account.handle || account.siteChannelId ? account : undefined;
+}
+
+const isOptionalString = (v: unknown) => v === undefined || typeof v === 'string';
+
 export function parseChannel(v: unknown, path: string, errors: DataError[]): Channel | null {
-  if (
-    !isObject(v) ||
-    !isNonEmptyString(v.id) ||
-    (v.name !== undefined && typeof v.name !== 'string') ||
-    (v.handle !== undefined && typeof v.handle !== 'string') ||
-    (v.youtubeChannelId !== undefined && typeof v.youtubeChannelId !== 'string')
-  ) {
+  if (!isObject(v) || !isNonEmptyString(v.id) || !isOptionalString(v.name) || !isObject(v.accounts)) {
     errors.push({ code: 'invalidShape', detail: path });
     return null;
   }
+
+  // { accounts: { youtube: { handle, siteChannelId }, ... } }。知らないサイトは形が違うものとして扱う
+  const accounts: Channel['accounts'] = {};
+  for (const [site, raw] of Object.entries(v.accounts)) {
+    if (
+      !(SITES as readonly string[]).includes(site) ||
+      !isObject(raw) ||
+      !isOptionalString(raw.handle) ||
+      !isOptionalString(raw.siteChannelId)
+    ) {
+      errors.push({ code: 'invalidShape', detail: `${path}.accounts.${site}` });
+      return null;
+    }
+    const account = parseAccount(raw);
+    if (account) accounts[site as Site] = account;
+  }
+
   const phrases = parsePhrases(v.phrases, `${path}.phrases`, errors);
   if (!phrases) return null;
-  const channel: Channel = { id: v.id, phrases };
-  // 空の値は持たない（省略したときと同じ意味になるため）
+  const channel: Channel = { id: v.id, accounts, phrases };
   const name = typeof v.name === 'string' ? v.name.trim() : '';
   if (name) channel.name = name;
-  const handle = typeof v.handle === 'string' ? normalizeHandle(v.handle) : '';
-  if (handle) channel.handle = handle;
-  const youtubeChannelId = typeof v.youtubeChannelId === 'string' ? v.youtubeChannelId.trim() : '';
-  if (youtubeChannelId) channel.youtubeChannelId = youtubeChannelId;
   return channel;
 }
 
@@ -221,23 +251,28 @@ export function checkRules(data: PhraseData): DataError[] {
     if (placed.get(ch.id) !== 1) errors.push({ code: 'channelPlacement', detail: ch.id });
   }
 
-  // ハンドルか YouTube のチャンネル ID のどちらかがないと、どのページとも一致しない
+  // どれか 1 つのサイトに、ハンドルかチャンネル ID がないと、どのページとも一致しない
+  const accountsOf = (ch: Channel) => Object.entries(ch.accounts) as [string, SiteAccount | undefined][];
   for (const ch of channels) {
-    if (!ch.handle && !ch.youtubeChannelId) errors.push({ code: 'missingChannelKey', detail: ch.id });
+    const hasKey = accountsOf(ch).some(([, a]) => a?.handle || a?.siteChannelId);
+    if (!hasKey) errors.push({ code: 'missingChannelKey', detail: ch.id });
   }
 
-  // 同じハンドルや YouTube のチャンネル ID を 2 つのチャンネルに登録しない
-  const checkUniqueKey = (code: ErrorCode, keyOf: (c: Channel) => string | undefined) => {
+  // 同じサイトの中で、同じハンドルやチャンネル ID を 2 つのチャンネルに登録しない
+  // （別のサイトに同じ名前があるのはよい）
+  const checkUniqueKey = (code: ErrorCode, keyOf: (a: SiteAccount) => string | undefined) => {
     const seen = new Set<string>();
     for (const ch of channels) {
-      const key = keyOf(ch);
-      if (!key) continue;
-      if (seen.has(key)) errors.push({ code, detail: key });
-      seen.add(key);
+      for (const [site, account] of accountsOf(ch)) {
+        const key = account && keyOf(account);
+        if (!key) continue;
+        if (seen.has(`${site}:${key}`)) errors.push({ code, detail: key });
+        seen.add(`${site}:${key}`);
+      }
     }
   };
-  checkUniqueKey('duplicateHandle', (c) => (c.handle ? handleKey(c.handle) : undefined));
-  checkUniqueKey('duplicateYoutubeChannelId', (c) => c.youtubeChannelId);
+  checkUniqueKey('duplicateHandle', (a) => (a.handle ? handleKey(a.handle) : undefined));
+  checkUniqueKey('duplicateSiteChannelId', (a) => a.siteChannelId);
 
   return errors;
 }

@@ -34,9 +34,9 @@ describe('チャンネルとグループの編集（直接書き換える）', (
     const data = createEmptyData();
     const g = addGroup(data, 'G');
     const a = addChannel(data, null);
-    a.handle = 'a';
+    a.accounts.youtube = { handle: 'a' };
     const b = addChannel(data, g.id);
-    b.handle = 'b';
+    b.accounts.youtube = { handle: 'b' };
     expect(placeOf(data, a.id)).toBeNull();
     expect(placeOf(data, b.id)).toBe(g.id);
 
@@ -68,12 +68,12 @@ describe('保存する前に形をそろえる', () => {
   it('空の値を省き、ハンドルを正規化する。コピーする文字列はそのまま', () => {
     const data = createEmptyData();
     const ch = addChannel(data, null);
-    Object.assign(ch, { name: '  ', handle: ' @Foo ', youtubeChannelId: '' });
+    Object.assign(ch, { name: '  ', accounts: { youtube: { handle: ' @Foo ', siteChannelId: '' } } });
     ch.phrases.push({ id: 'p1', text: ' a ', label: '' }, { id: 'p2', text: 'b', label: 'b' }, { id: 'p3', text: 'c', label: 'C' });
     normalizeForSave(data);
     expect(ch).toEqual({
       id: ch.id,
-      handle: 'Foo',
+      accounts: { youtube: { handle: 'Foo' } },
       phrases: [
         { id: 'p1', text: ' a ' },
         { id: 'p2', text: 'b' },
@@ -107,9 +107,9 @@ function dataWith(channel: Channel) {
 
 describe('+ でフレーズを追加する', () => {
   it('登録済みのチャンネルの最後に、ラベルなしで追加する', () => {
-    const ch: Channel = { id: newId(), handle: 'foo', phrases: [{ id: newId(), text: 'a' }] };
+    const ch: Channel = { id: newId(), accounts: { youtube: { handle: 'foo' } }, phrases: [{ id: newId(), text: 'a' }] };
     const data = dataWith(ch);
-    const next = addPhraseToChannel(data, { handle: 'FOO' }, 'b')!;
+    const next = addPhraseToChannel(data, { site: 'youtube', handle: 'FOO' }, 'b')!;
     expect(next.channels[ch.id]!.phrases.map((p) => [p.text, p.label])).toEqual([
       ['a', undefined],
       ['b', undefined],
@@ -118,19 +118,18 @@ describe('+ でフレーズを追加する', () => {
   });
 
   it('元のデータは書き換えない', () => {
-    const ch: Channel = { id: newId(), handle: 'foo', phrases: [] };
+    const ch: Channel = { id: newId(), accounts: { youtube: { handle: 'foo' } }, phrases: [] };
     const data = dataWith(ch);
-    addPhraseToChannel(data, { handle: 'foo' }, 'b');
+    addPhraseToChannel(data, { site: 'youtube', handle: 'foo' }, 'b');
     expect(ch.phrases).toEqual([]);
   });
 
   it('未登録のチャンネルは登録してから追加し、「グループなし」の最後に入れる', () => {
-    const data = dataWith({ id: newId(), handle: 'other', phrases: [] });
-    const next = addPhraseToChannel(data, { handle: 'foo', youtubeChannelId: 'UCabcdefghijklmnopqrstuv' }, 'hello')!;
+    const data = dataWith({ id: newId(), accounts: { youtube: { handle: 'other' } }, phrases: [] });
+    const next = addPhraseToChannel(data, { site: 'youtube', handle: 'foo', siteChannelId: 'UCabcdefghijklmnopqrstuv' }, 'hello')!;
     const id = next.ungroupedChannelIds.at(-1)!;
     expect(next.channels[id]).toMatchObject({
-      handle: 'foo',
-      youtubeChannelId: 'UCabcdefghijklmnopqrstuv',
+      accounts: { youtube: { handle: 'foo', siteChannelId: 'UCabcdefghijklmnopqrstuv' } },
       phrases: [{ text: 'hello' }],
     });
     expect(next.channels[id]!.name).toBeUndefined();
@@ -139,12 +138,12 @@ describe('+ でフレーズを追加する', () => {
 
   it('前後の空白は残し、空白だけのときは追加しない', () => {
     const data = createEmptyData();
-    const next = addPhraseToChannel(data, { handle: 'foo' }, ' a ')!;
+    const next = addPhraseToChannel(data, { site: 'youtube', handle: 'foo' }, ' a ')!;
     expect(Object.values(next.channels)[0]!.phrases[0]!.text).toBe(' a ');
-    expect(addPhraseToChannel(data, { handle: 'foo' }, '   ')).toBeNull();
+    expect(addPhraseToChannel(data, { site: 'youtube', handle: 'foo' }, '   ')).toBeNull();
   });
 
   it('チャンネルが分からないときは追加しない', () => {
-    expect(addPhraseToChannel(createEmptyData(), {}, 'a')).toBeNull();
+    expect(addPhraseToChannel(createEmptyData(), { site: 'youtube' }, 'a')).toBeNull();
   });
 });

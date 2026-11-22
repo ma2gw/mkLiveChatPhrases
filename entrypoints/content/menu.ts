@@ -15,7 +15,7 @@
 import { findChannel, type PageChannel } from '../../lib/model/match';
 import { channelDisplayName, type Phrase, type PhraseData } from '../../lib/model/types';
 import { t } from '../../lib/i18n';
-import { afterCopy, applyMods, enabledMods, MODS, toggleMod, type Mod } from '../../lib/mods';
+import { afterCopy, applyMods, enabledMods, toggleMod, type Mod } from '../../lib/mods';
 import type { Settings } from '../../lib/storage/settings';
 import { copyText } from './clipboard';
 import { DEFAULT_WIDGET, loadWidgetState, saveWidgetState, type WidgetState } from './widgetState';
@@ -446,7 +446,7 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
       channelArea.replaceChildren(el('span', 'lcp-channel', channelDisplayName(channel)));
     } else if (page) {
       channelArea.replaceChildren(
-        el('span', 'lcp-channel', page.handle ? `@${page.handle}` : (page.youtubeChannelId ?? '')),
+        el('span', 'lcp-channel', page.handle ? `@${page.handle}` : (page.siteChannelId ?? '')),
         registerBadge(),
       );
     } else {

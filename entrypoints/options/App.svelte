@@ -10,9 +10,9 @@
   import { onDestroy, untrack } from 'svelte';
   import { t } from '../../lib/i18n';
   import { canonicalJson } from '../../lib/model/compare';
-  import { addChannel, normalizeForSave } from '../../lib/model/edit';
-  import { findChannel } from '../../lib/model/match';
-  import type { PhraseData } from '../../lib/model/types';
+  import { newChannelFor, normalizeForSave } from '../../lib/model/edit';
+  import { findChannel, type PageChannel } from '../../lib/model/match';
+  import { SITES, type PhraseData, type Site } from '../../lib/model/types';
   import { checkRules } from '../../lib/model/validate';
   import { exportToJson, importFromJson } from '../../lib/storage/importExport';
   import {
@@ -68,7 +68,7 @@
   /**
    * URL の # から、開いたときに選ぶものを決める（メニューから開いたとき）
    * - #channel=<id>: そのチャンネルを選ぶ
-   * - #new&handle=…&uc=…: そのハンドルとチャンネル ID を入れたチャンネルを「グループなし」に作って選ぶ
+   * - #new&site=…&handle=…&id=…: そのサイト、ハンドル、チャンネル ID を入れたチャンネルを「グループなし」に作って選ぶ
    *   （下書きに作るだけ。保存するまでは登録されない。すでに登録されていれば、それを選ぶ）
    */
   function selectFromHash() {
@@ -79,13 +79,21 @@
     if (id && draft.channels[id]) {
       editor.selection = { kind: 'channel', id };
     } else if (params.has('new')) {
-      const page = { handle: params.get('handle') ?? undefined, youtubeChannelId: params.get('uc') ?? undefined };
-      if (page.handle || page.youtubeChannelId) {
+      const site = params.get('site') ?? '';
+      const page: PageChannel = {
+        site: site as Site,
+        handle: params.get('handle') ?? undefined,
+        siteChannelId: params.get('id') ?? undefined,
+      };
+      // 知らないサイトのときは何もしない
+      if ((SITES as readonly string[]).includes(site) && (page.handle || page.siteChannelId)) {
         let channel = findChannel(draft, page);
         if (!channel) {
-          channel = addChannel(draft, null);
-          if (page.handle) channel.handle = page.handle;
-          if (page.youtubeChannelId) channel.youtubeChannelId = page.youtubeChannelId;
+          channel = newChannelFor(page);
+          draft.channels[channel.id] = channel;
+          draft.ungroupedChannelIds.push(channel.id);
+          // 下書きの中のもの（リアクティブな方）を選ぶ
+          channel = draft.channels[channel.id]!;
         }
         editor.selection = { kind: 'channel', id: channel.id };
       }
