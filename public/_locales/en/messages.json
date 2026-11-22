@@ -143,6 +143,7 @@
   "channelName": { "message": "Display name", "description": "Editor: channel display name field" },
   "channelNamePlaceholder": { "message": "Defaults to the handle", "description": "Editor: placeholder of the channel name field" },
   "handle": { "message": "Handle", "description": "Editor: handle field" },
+  "twitchHandlePlaceholder": { "message": "the name after twitch.tv/", "description": "Editor: placeholder of the Twitch handle field" },
   "siteChannelId": { "message": "Channel ID", "description": "Editor: YouTube channel ID (UC...) field" },
   "group": { "message": "Group", "description": "Editor: group of the channel" },
   "phrases": { "message": "Phrases", "description": "Editor: phrases heading" },

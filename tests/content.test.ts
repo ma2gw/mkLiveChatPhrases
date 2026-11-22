@@ -1,6 +1,32 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import { isTargetPage, parseChannelHref, shouldShowMenu } from '../entrypoints/content/youtube';
+import { adapterFor } from '../entrypoints/content/sites';
+import { parseTwitchPath } from '../entrypoints/content/sites/twitch';
+import { isTargetPage, parseChannelHref } from '../entrypoints/content/sites/youtube';
+import { shouldShowMenu } from '../entrypoints/content/visibility';
+
+describe('サイトのアダプターを選ぶ', () => {
+  it('ホスト名で選び、対応していなければ undefined', () => {
+    expect(adapterFor('www.youtube.com')?.site).toBe('youtube');
+    expect(adapterFor('www.twitch.tv')?.site).toBe('twitch');
+    expect(adapterFor('example.com')).toBeUndefined();
+  });
+});
+
+describe('Twitch のページを読む', () => {
+  it.each([
+    ['/foo_bar', { site: 'twitch', handle: 'foo_bar' }],
+    ['/FooBar/', { site: 'twitch', handle: 'foobar' }], // 小文字にそろえる
+    ['/', null],
+    ['/directory', null], // Twitch の機能のページ
+    ['/videos/123456', null], // 2 段以上はチャンネルのページではない
+    ['/foo/videos', null],
+    ['/ab', null], // ログイン名として短すぎる
+    ['/foo-bar', null], // ログイン名に使えない文字
+  ])('%s', (pathname, expected) => {
+    expect(parseTwitchPath(pathname)).toEqual(expected);
+  });
+});
 import { loadMenuHidden, saveMenuHidden } from '../lib/storage/menuHidden';
 
 describe('メニューを出すかどうか', () => {
@@ -43,6 +69,10 @@ describe('チャンネルの表示名', () => {
   it('ハンドルもなければチャンネル ID', () => {
     const accounts = { youtube: { siteChannelId: 'UCabcdefghijklmnopqrstuv' } };
     expect(channelDisplayName({ ...base, accounts })).toBe('UCabcdefghijklmnopqrstuv');
+  });
+  it('Twitch のハンドルには @ を付けない。YouTube があれば YouTube を先に使う', () => {
+    expect(channelDisplayName({ ...base, accounts: { twitch: { handle: 'foo' } } })).toBe('foo');
+    expect(channelDisplayName({ ...base, accounts: { twitch: { handle: 'tw' }, youtube: { handle: 'yt' } } })).toBe('@yt');
   });
   it('アカウントがなければ空', () => {
     expect(channelDisplayName(base)).toBe('');
@@ -99,5 +129,24 @@ describe('登録されたチャンネルを探す', () => {
   it('登録されていなければ undefined', () => {
     expect(findChannel(data, { site: 'youtube', handle: 'other' })).toBeUndefined();
     expect(findChannel(data, { site: 'youtube' })).toBeUndefined();
+  });
+});
+
+describe('YouTube と Twitch の両方のアカウントを持つチャンネル', () => {
+  const ch: Channel = {
+    id: newId(),
+    accounts: { youtube: { handle: 'yt_name' }, twitch: { handle: 'tw_name' } },
+    phrases: [],
+  };
+  const data = createEmptyData();
+  data.channels[ch.id] = ch;
+  data.ungroupedChannelIds.push(ch.id);
+
+  it('どちらのサイトのページからでも見つかる', () => {
+    expect(findChannel(data, { site: 'youtube', handle: 'yt_name' })).toBe(ch);
+    expect(findChannel(data, { site: 'twitch', handle: 'TW_NAME' })).toBe(ch);
+  });
+  it('サイトが違えば、同じ名前でも見つからない', () => {
+    expect(findChannel(data, { site: 'twitch', handle: 'yt_name' })).toBeUndefined();
   });
 });

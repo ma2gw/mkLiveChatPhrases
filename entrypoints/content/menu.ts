@@ -13,7 +13,7 @@
  * - 並びの最後の + で、このチャンネルにフレーズを追加できる（ラベルなし。未登録ならチャンネルも登録する）
  */
 import { findChannel, type PageChannel } from '../../lib/model/match';
-import { channelDisplayName, type Phrase, type PhraseData } from '../../lib/model/types';
+import { channelDisplayName, formatHandle, type Phrase, type PhraseData } from '../../lib/model/types';
 import { t } from '../../lib/i18n';
 import { afterCopy, applyMods, enabledMods, toggleMod, type Mod } from '../../lib/mods';
 import { textColorFor } from '../../lib/color';
@@ -30,6 +30,8 @@ export interface MenuState {
   data: PhraseData | null;
   /** データを読めなかった理由 */
   loadError?: 'newerSchemaVersion' | 'loadFailed';
+  /** サイトがダークテーマか（メニューの色を自動にしているときに合わせる） */
+  dark?: boolean;
 }
 
 export interface MenuHandlers {
@@ -454,7 +456,7 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
       channelArea.replaceChildren(el('span', 'lcp-channel', channelDisplayName(channel)));
     } else if (page) {
       channelArea.replaceChildren(
-        el('span', 'lcp-channel', page.handle ? `@${page.handle}` : (page.siteChannelId ?? '')),
+        el('span', 'lcp-channel', page.handle ? formatHandle(page.site, page.handle) : (page.siteChannelId ?? '')),
         registerBadge(),
       );
     } else {
@@ -517,8 +519,8 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
   return {
     update(next: MenuState) {
       state = next;
-      // YouTube のダークテーマに合わせる（<html dark> が付く）
-      root.classList.toggle('lcp-dark', document.documentElement.hasAttribute('dark'));
+      // サイトのダークテーマに合わせる（判定はサイトのアダプター）
+      root.classList.toggle('lcp-dark', !!state.dark);
       // hidden は新しい型定義では 'until-found' も取りうるので、真偽値にそろえる
       const wasHidden = root.hidden !== false;
       applyVisibility();

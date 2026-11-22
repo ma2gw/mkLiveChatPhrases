@@ -143,6 +143,7 @@
   "channelName": { "message": "表示名", "description": "編集画面: チャンネルの表示名の欄" },
   "channelNamePlaceholder": { "message": "省略するとハンドルを表示", "description": "編集画面: チャンネルの名前の欄のプレースホルダー" },
   "handle": { "message": "ハンドル", "description": "編集画面: ハンドルの欄" },
+  "twitchHandlePlaceholder": { "message": "twitch.tv/ の後ろの名前", "description": "編集画面: Twitch のハンドルの欄の案内" },
   "siteChannelId": { "message": "チャンネル ID", "description": "編集画面: YouTube のチャンネル ID（UC...）の欄" },
   "group": { "message": "グループ", "description": "編集画面: チャンネルが入っているグループの欄" },
   "phrases": { "message": "フレーズ", "description": "編集画面: フレーズの見出し" },

@@ -1,8 +1,9 @@
 /**
- * YouTube 上で動く content script
+ * YouTube と Twitch の上で動く content script
  *
- * YouTube は SPA なので、トップページなどから動画に移動しても読み込み直されない。
- * そのため youtube.com のすべてのページで動かし、メニューを出すかどうかは URL を見て決める
+ * サイトごとのページを読む処理は sites/ のアダプターにまとめ、ホスト名で選ぶ
+ * どちらも SPA なので、トップページなどから配信に移動しても読み込み直されない。
+ * そのためサイトのすべてのページで動かし、メニューを出すかどうかは URL を見て決める
  *
  * 拡張機能を更新したり読み込み直したりすると、開いていたタブには古い content script が残り、
  * 拡張機能の機能（storage、runtime.sendMessage など）を使うと「Extension context invalidated」になる。
@@ -16,15 +17,21 @@ import { defaultSettings, loadSettings, watchSettings, type Settings } from '../
 import { NewerSchemaVersionError, loadData, saveData, watchData } from '../../lib/storage/sync';
 import { createMenu, type MenuHandlers, type MenuState } from './menu';
 import styleText from './style.css?inline';
-import { getPageChannel, isTargetPage, shouldShowMenu, watchPage } from './youtube';
+import { adapterFor } from './sites';
+import { shouldShowMenu } from './visibility';
 
 export default defineContentScript({
-  matches: ['*://www.youtube.com/*'],
+  // サイトを足すときは、ここと sites/ のアダプターに足す
+  matches: ['*://www.youtube.com/*', '*://www.twitch.tv/*'],
   // CSS は JS に埋め込み、createShadowRootUi の css で Shadow DOM に入れる
   // （'ui' にすると CSS ファイルを web_accessible_resources で公開する必要があるため）
   cssInjectionMode: 'manual',
 
   async main(ctx) {
+    const adapter = adapterFor(location.hostname);
+    if (!adapter) return;
+    const getPageChannel = () => adapter.getPageChannel();
+
     let data: MenuState['data'] = null;
     let loadError: MenuState['loadError'];
 
@@ -107,7 +114,7 @@ export default defineContentScript({
 
     const refresh = () => {
       if (!ctx.isValid) return;
-      const targetPage = isTargetPage(location);
+      const targetPage = adapter.isTargetPage(location);
       const page = targetPage ? getPageChannel() : null;
       const visible = shouldShowMenu({
         targetPage,
@@ -115,7 +122,7 @@ export default defineContentScript({
         hideUnregistered: settings.hideUnregistered,
         registered: !!(data && page && findChannel(data, page)),
       });
-      menu.update({ visible, page, data, loadError });
+      menu.update({ visible, page, data, loadError, dark: adapter.isDarkTheme() });
     };
 
     const applyLoaded = (result: Promise<MenuState['data']>) =>
@@ -153,6 +160,6 @@ export default defineContentScript({
       }),
     );
 
-    watchPage(ctx, refresh);
+    adapter.watchPage(ctx, refresh);
   },
 });

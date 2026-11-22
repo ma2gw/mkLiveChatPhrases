@@ -20,11 +20,28 @@ export interface Phrase {
 }
 
 /**
- * 対応しているサイト
- * 今は YouTube だけ。ほかのサイト（Twitch など）に対応するときは、ここに足す
+ * 対応しているサイト。ほかのサイトに対応するときは、ここと SITE_INFO に足す
+ * （ページを読む処理は entrypoints/content/sites/ に足す）
  */
-export const SITES = ['youtube'] as const;
+export const SITES = ['youtube', 'twitch'] as const;
 export type Site = (typeof SITES)[number];
+
+/** サイトごとの見せ方（メニューと編集画面で使う） */
+export const SITE_INFO: Record<
+  Site,
+  {
+    /** 画面に出すサイトの名前 */
+    label: string;
+    /** ハンドルを見せるときに前に付ける文字（YouTube は @、Twitch は付けない） */
+    handlePrefix: string;
+    /** チャンネル ID の欄の案内。チャンネル ID を使わないサイトは null（欄を出さない） */
+    idPlaceholder: string | null;
+  }
+> = {
+  youtube: { label: 'YouTube', handlePrefix: '@', idPlaceholder: 'UC…' },
+  // Twitch は URL の twitch.tv/<名前> の名前をハンドルとして使う。ユーザー ID は URL に出ないので使わない
+  twitch: { label: 'Twitch', handlePrefix: '', idPlaceholder: null },
+};
 
 /** あるサイトでのアカウント（そのサイトのチャンネル 1 つ） */
 export interface SiteAccount {
@@ -53,16 +70,26 @@ export interface Channel {
   phrases: Phrase[];
 }
 
+/** サイトのハンドルの見せ方（YouTube なら @foo、Twitch なら foo） */
+export function formatHandle(site: Site, handle: string): string {
+  return `${SITE_INFO[site].handlePrefix}${handle}`;
+}
+
 /**
  * チャンネルの表示名
  * name がなければ、SITES の順で最初に見つかったハンドル、それもなければチャンネル ID
  */
 export function channelDisplayName(channel: Channel): string {
   if (channel.name) return channel.name;
-  const accounts = SITES.map((site) => channel.accounts[site]);
-  const handle = accounts.find((a) => a?.handle)?.handle;
-  if (handle) return `@${handle}`;
-  return accounts.find((a) => a?.siteChannelId)?.siteChannelId ?? '';
+  for (const site of SITES) {
+    const handle = channel.accounts[site]?.handle;
+    if (handle) return formatHandle(site, handle);
+  }
+  for (const site of SITES) {
+    const id = channel.accounts[site]?.siteChannelId;
+    if (id) return id;
+  }
+  return '';
 }
 
 /** チャンネルを整理するためのグループ（フォルダ）。フレーズは持たない */

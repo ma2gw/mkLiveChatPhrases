@@ -2,7 +2,7 @@
   /** 右側: チャンネルの編集 */
   import { t } from '../../lib/i18n';
   import { deleteChannel, moveChannel, placeOf } from '../../lib/model/edit';
-  import { channelDisplayName, SITES, type Site, type SiteAccount } from '../../lib/model/types';
+  import { channelDisplayName, SITE_INFO, SITES, type Site, type SiteAccount } from '../../lib/model/types';
   import PhraseList from './PhraseList.svelte';
   import { editor } from './state.svelte';
 
@@ -19,9 +19,8 @@
     moveChannel(data, id, to, list.length);
   }
 
-  /** サイトの表示名と、チャンネル ID の欄の案内（対応するサイトが増えたら足す） */
-  const SITE_LABEL: Record<Site, string> = { youtube: 'YouTube' };
-  const ID_PLACEHOLDER: Record<Site, string> = { youtube: 'UC…' };
+  /** ハンドルの欄の案内（サイトの見せ方は SITE_INFO） */
+  const HANDLE_PLACEHOLDER: Record<Site, string> = { youtube: 'handle', twitch: t('twitchHandlePlaceholder') };
 
   /** サイトのアカウントの欄を書き換える。アカウントがまだなければ作る（空になったものは保存するときに消える） */
   function setAccount(site: Site, key: keyof SiteAccount, value: string) {
@@ -64,29 +63,32 @@
 
     <!-- サイトごとのアカウント（対応するサイトが増えたら、ここに欄が増える） -->
     {#each SITES as site (site)}
-      <div class="site">{SITE_LABEL[site]}</div>
+      {@const info = SITE_INFO[site]}
+      <div class="site">{info.label}</div>
       <label>
         <span>{t('handle')}</span>
         <!-- @ は固定の文字として外に出し、入力欄には @ を入れない（@ 付きで入力・貼り付けしても、その場で外す） -->
         <span class="handle-field">
-          <span class="at">@</span>
+          {#if info.handlePrefix}<span class="at">{info.handlePrefix}</span>{/if}
           <input
             value={channel.accounts[site]?.handle ?? ''}
             oninput={(e) => onHandleInput(site, e.currentTarget)}
             class:invalid={missingKey}
-            placeholder="handle"
+            placeholder={HANDLE_PLACEHOLDER[site]}
           />
         </span>
       </label>
-      <label>
-        <span>{t('siteChannelId')}</span>
-        <input
-          value={channel.accounts[site]?.siteChannelId ?? ''}
-          oninput={(e) => setAccount(site, 'siteChannelId', e.currentTarget.value)}
-          class:invalid={missingKey}
-          placeholder={ID_PLACEHOLDER[site]}
-        />
-      </label>
+      {#if info.idPlaceholder !== null}
+        <label>
+          <span>{t('siteChannelId')}</span>
+          <input
+            value={channel.accounts[site]?.siteChannelId ?? ''}
+            oninput={(e) => setAccount(site, 'siteChannelId', e.currentTarget.value)}
+            class:invalid={missingKey}
+            placeholder={info.idPlaceholder}
+          />
+        </label>
+      {/if}
     {/each}
   </div>
 

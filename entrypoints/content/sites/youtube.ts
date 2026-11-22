@@ -5,8 +5,9 @@
  * 失敗したときは例外を投げずに null を返し、YouTube のページを壊さない
  */
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
-import type { PageChannel } from '../../lib/model/match';
-import { normalizeHandle } from '../../lib/model/validate';
+import type { PageChannel } from '../../../lib/model/match';
+import { normalizeHandle } from '../../../lib/model/validate';
+import type { SiteAdapter } from '.';
 
 /** YouTube の DOM のセレクタ（ここだけにまとめる） */
 export const SELECTORS = {
@@ -19,22 +20,6 @@ export const SELECTORS = {
 /** メニューを出すページか（/watch と /live/...） */
 export function isTargetPage(url: { pathname: string }): boolean {
   return url.pathname === '/watch' || url.pathname.startsWith('/live/');
-}
-
-/**
- * メニューを出すかどうか
- * - 出すページ（/watch、/live/）でなければ出さない
- * - ツールバーのアイコンで隠していれば出さない
- * - 設定「未登録のチャンネルでは出さない」がオンなら、登録していないチャンネル（分からないときも含む）では出さない
- */
-export function shouldShowMenu(o: {
-  targetPage: boolean;
-  hidden: boolean;
-  hideUnregistered: boolean;
-  registered: boolean;
-}): boolean {
-  if (!o.targetPage || o.hidden) return false;
-  return !o.hideUnregistered || o.registered;
 }
 
 /**
@@ -119,3 +104,13 @@ export function watchPage(ctx: ContentScriptContext, callback: () => void): void
   });
   onNavigate();
 }
+
+export const youtubeAdapter: SiteAdapter = {
+  site: 'youtube',
+  hosts: ['www.youtube.com'],
+  isTargetPage,
+  getPageChannel,
+  watchPage,
+  // YouTube はダークテーマのとき <html> に dark が付く
+  isDarkTheme: () => document.documentElement.hasAttribute('dark'),
+};
