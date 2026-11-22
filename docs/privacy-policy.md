@@ -41,11 +41,9 @@ mkLiveChatPhrases（以下「本拡張機能」）は、ライブ配信のチャ
 
 このポリシーを変更したときは、このページを更新し、最終更新日を改めます。
 
-## お問い合わせ
+## サポート
 
-ご質問や不具合の報告は、GitHub の Issues にお寄せください。
-
-https://github.com/ma2gw/mkLiveChatPhrases/issues
+本拡張機能は現状のまま無保証で提供し、個別のサポートは行いません。
 
 ---
 
@@ -90,8 +88,6 @@ mkLiveChatPhrases ("the extension") is a browser extension that copies preset ph
 
 If this policy changes, this page will be updated along with the "Last updated" date.
 
-## Contact
+## Support
 
-For questions or bug reports, please open an issue on GitHub:
-
-https://github.com/ma2gw/mkLiveChatPhrases/issues
+The extension is provided "as is", without warranty of any kind, and no individual support is provided.
