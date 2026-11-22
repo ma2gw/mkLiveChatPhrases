@@ -4,7 +4,7 @@
     "description": "Extension name"
   },
   "extDescription": {
-    "message": "Copy your saved phrases for live chat with one click.",
+    "message": "Register live chat phrases for each channel. On YouTube and Twitch, copy the ones for the channel you're watching in one click.",
     "description": "Extension description"
   },
   "openMenu": {

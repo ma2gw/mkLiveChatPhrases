@@ -4,7 +4,7 @@
     "description": "拡張機能名"
   },
   "extDescription": {
-    "message": "ライブチャット用の定型文をワンクリックでコピーします。",
+    "message": "ライブチャットの定型文をチャンネルごとに登録。YouTube と Twitch で、見ているチャンネルの定型文をワンクリックでコピーします。",
     "description": "拡張機能の説明"
   },
   "openMenu": {

@@ -31,3 +31,6 @@ CLAUDE.md
 # 普段使いのビルド（npm run install:local のコピー先）
 local/
 
+
+# ストアの掲載情報の下書き（手元だけに置く）
+docs/store-listing.md
