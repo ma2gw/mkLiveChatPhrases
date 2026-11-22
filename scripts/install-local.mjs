@@ -7,7 +7,7 @@
  *    - key（公開鍵）を manifest に入れると、どの PC でも同じ ID になる
  *    - 中身は公開鍵だけで、秘密の情報ではない。ストアに出すビルドには入れない
  * 2. MK_LOCAL_BUILD=1 でビルドする（wxt.config.ts が key を manifest に入れる）
- * 3. .output/chrome-mv3 を local/MkLiveChatPhrases にコピーする
+ * 3. .output/chrome-mv3 を local/mkLiveChatPhrases にコピーする
  *    （ビルドの途中で失敗しても、読み込んでいる拡張機能が壊れないように）
  */
 import { execSync } from 'node:child_process';
@@ -18,7 +18,7 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const keyFile = resolve(root, 'local-build-key.txt');
 const outDir = resolve(root, '.output/chrome-mv3');
-const installDir = resolve(root, 'local/MkLiveChatPhrases');
+const installDir = resolve(root, 'local/mkLiveChatPhrases');
 
 // 1. key
 if (!existsSync(keyFile)) {

@@ -103,7 +103,7 @@ export function joinFromSync(items: Record<string, unknown>): PhraseData {
     if (!placed.has(id)) data.ungroupedChannelIds.push(id);
   }
 
-  if (ignored.length > 0) console.warn('[MkLiveChatPhrases] 壊れたデータを読み飛ばしました', ignored);
+  if (ignored.length > 0) console.warn('[mkLiveChatPhrases] 壊れたデータを読み飛ばしました', ignored);
   return data;
 }
 
@@ -181,7 +181,7 @@ export async function saveData(data: PhraseData): Promise<Result<void>> {
 export function watchData(callback: (data: PhraseData) => void): () => void {
   const listener = (_changes: unknown, areaName: string) => {
     if (areaName !== 'sync') return;
-    loadData().then(callback, (e) => console.warn('[MkLiveChatPhrases] データを読めませんでした', e));
+    loadData().then(callback, (e) => console.warn('[mkLiveChatPhrases] データを読めませんでした', e));
   };
   browser.storage.onChanged.addListener(listener);
   return () => browser.storage.onChanged.removeListener(listener);

@@ -146,7 +146,7 @@
         editor.errors = result.errors;
       }
     } catch (e) {
-      console.warn('[MkLiveChatPhrases] 保存できませんでした', e);
+      console.warn('[mkLiveChatPhrases] 保存できませんでした', e);
       editor.errors = [{ code: 'invalidShape', detail: String(e) }];
     } finally {
       saving = false;

@@ -50,10 +50,10 @@ export default defineContentScript({
       if (!ctx.isValid) return;
       try {
         browser.runtime.sendMessage({ type: 'openEditor', ...message }).catch((e: unknown) => {
-          console.warn('[MkLiveChatPhrases] 編集画面を開けませんでした', e);
+          console.warn('[mkLiveChatPhrases] 編集画面を開けませんでした', e);
         });
       } catch (e) {
-        console.warn('[MkLiveChatPhrases] 編集画面を開けませんでした', e);
+        console.warn('[mkLiveChatPhrases] 編集画面を開けませんでした', e);
       }
     };
 
@@ -68,14 +68,14 @@ export default defineContentScript({
           if (!next) return false;
           const result = await saveData(next);
           if (!result.ok) {
-            console.warn('[MkLiveChatPhrases] 追加できませんでした', result.errors);
+            console.warn('[mkLiveChatPhrases] 追加できませんでした', result.errors);
             return false;
           }
           data = next;
           refresh();
           return true;
         } catch (e) {
-          console.warn('[MkLiveChatPhrases] 追加できませんでした', e);
+          console.warn('[mkLiveChatPhrases] 追加できませんでした', e);
           return false;
         }
       },
@@ -134,7 +134,7 @@ export default defineContentScript({
         .catch((e: unknown) => {
           data = null;
           loadError = e instanceof NewerSchemaVersionError ? 'newerSchemaVersion' : 'loadFailed';
-          console.warn('[MkLiveChatPhrases] データを読めませんでした', e);
+          console.warn('[mkLiveChatPhrases] データを読めませんでした', e);
         })
         .finally(refresh);
 
