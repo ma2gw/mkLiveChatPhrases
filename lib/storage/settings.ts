@@ -20,11 +20,11 @@ export interface Appearance {
   borderColor?: string;
   /** 閉じているときの丸いアイコンの色。省略したら緑 */
   iconColor?: string;
-  /** 背景（見出し、ツールバー、フレーズの欄）の不透明度。50〜100（%） */
+  /** 背景（見出し、ツールバー、フレーズの欄）の不透明度。0〜100（%）。0 なら背景は見えなくなる（文字とボタンは残る） */
   opacity: number;
 }
 
-export const OPACITY_MIN = 50;
+export const OPACITY_MIN = 0;
 export const OPACITY_MAX = 100;
 
 export interface Settings {
@@ -53,7 +53,7 @@ export function defaultSettings(): Settings {
   return { enabledMods: [], submitOnEnter: false, hideUnregistered: false, appearance: { opacity: OPACITY_MAX } };
 }
 
-/** 見た目を読む。色が '#rrggbb' でなければ省略（自動）、不透明度は 50〜100 に収める */
+/** 見た目を読む。色が '#rrggbb' でなければ省略（自動）、不透明度は 0〜100 に収める */
 function parseAppearance(value: unknown): Appearance {
   const v = value as Partial<Appearance> | undefined;
   const appearance: Appearance = {

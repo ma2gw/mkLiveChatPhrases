@@ -35,11 +35,11 @@ describe('見た目の設定を読む', () => {
     expect((await loadSettings()).appearance).toEqual({ opacity: 100 });
   });
 
-  it('色は #rrggbb だけを受け付け（小文字にそろえる）、不透明度は 50〜100 に収める', async () => {
+  it('色は #rrggbb だけを受け付け（小文字にそろえる）、不透明度は 0〜100 に収める', async () => {
     await fakeBrowser.storage.sync.set({
-      settings: { appearance: { menuColor: '#ABCDEF', borderColor: 'red', iconColor: '#123456', opacity: 20 } },
+      settings: { appearance: { menuColor: '#ABCDEF', borderColor: 'red', iconColor: '#123456', opacity: -10 } },
     });
-    expect((await loadSettings()).appearance).toEqual({ menuColor: '#abcdef', iconColor: '#123456', opacity: 50 });
+    expect((await loadSettings()).appearance).toEqual({ menuColor: '#abcdef', iconColor: '#123456', opacity: 0 });
     await fakeBrowser.storage.sync.set({ settings: { appearance: { opacity: 87 } } });
     expect((await loadSettings()).appearance).toEqual({ opacity: 87 });
   });
