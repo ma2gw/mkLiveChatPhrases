@@ -16,11 +16,22 @@
   // 別のタブや PC で変わったら反映する
   onDestroy(watchSettings((s) => (settings = s)));
 
-  async function setEnabled(id: string, enabled: boolean) {
+  function setEnabled(id: string, enabled: boolean) {
     if (!settings) return;
-    const disabled = settings.disabledMods.filter((x) => x !== id);
-    if (!enabled) disabled.push(id);
-    settings.disabledMods = disabled;
+    const ids = settings.enabledMods.filter((x) => x !== id);
+    if (enabled) ids.push(id);
+    settings.enabledMods = ids;
+    void save();
+  }
+
+  function setSubmitOnEnter(value: boolean) {
+    if (!settings) return;
+    settings.submitOnEnter = value;
+    void save();
+  }
+
+  async function save() {
+    if (!settings) return;
     try {
       await saveSettings($state.snapshot(settings));
       failed = false;
@@ -32,6 +43,19 @@
 </script>
 
 <h2>{t('settings')}</h2>
+<p class="muted">{t('settingsHelp')}</p>
+
+<h3>{t('menuHeading')}</h3>
+{#if settings}
+  <label>
+    <input
+      type="checkbox"
+      checked={settings.submitOnEnter}
+      onchange={(e) => setSubmitOnEnter(e.currentTarget.checked)}
+    />
+    <span>{t('submitOnEnter')}</span>
+  </label>
+{/if}
 
 <h3>{t('modsHeading')}</h3>
 <p class="muted">{t('modsHelp')}</p>
@@ -43,7 +67,7 @@
         <label>
           <input
             type="checkbox"
-            checked={!settings.disabledMods.includes(mod.id)}
+            checked={settings.enabledMods.includes(mod.id)}
             onchange={(e) => setEnabled(mod.id, e.currentTarget.checked)}
           />
           <span class="mod-label">{mod.label}</span>

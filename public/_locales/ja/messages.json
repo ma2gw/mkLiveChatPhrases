@@ -51,6 +51,10 @@
     "message": "コピーする文字列（✓ で追加）",
     "description": "+ を押したときの入力欄のプレースホルダー"
   },
+  "addPhrasePlaceholderEnter": {
+    "message": "コピーする文字列（✓ か Enter で追加）",
+    "description": "+ を押したときの入力欄のプレースホルダー（Enter で追加する設定がオンのとき）"
+  },
   "addConfirm": {
     "message": "追加する",
     "description": "入力欄の横の ✓ ボタンのツールチップとラベル"
@@ -101,7 +105,10 @@
   "phrasesTab": { "message": "フレーズ", "description": "編集画面: フレーズの一覧のタブ" },
   "globalPhrasesLong": { "message": "全チャンネル共通", "description": "編集画面: 一覧の、共通フレーズの行" },
   "modsHeading": { "message": "mod", "description": "編集画面: 設定の mod の見出し" },
-  "modsHelp": { "message": "メニューに表示する mod を選びます。変更はすぐに反映されます。", "description": "編集画面: 設定の mod の説明" },
+  "modsHelp": { "message": "メニューに表示する mod を選びます。", "description": "編集画面: 設定の mod の説明" },
+  "settingsHelp": { "message": "設定の変更はすぐに保存され、メニューに反映されます。", "description": "編集画面: 設定の説明" },
+  "menuHeading": { "message": "メニュー", "description": "編集画面: 設定のメニューの見出し" },
+  "submitOnEnter": { "message": "+ で追加するとき、Enter で確定する", "description": "編集画面: Enter で追加する設定" },
   "settingsSaveFailed": { "message": "設定を保存できませんでした。", "description": "編集画面: 設定を保存できなかったとき" },
 
   "globalPhrases": { "message": "共通", "description": "編集画面: 全チャンネル共通のフレーズ" },

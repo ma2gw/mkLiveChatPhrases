@@ -1,6 +1,6 @@
 {
   "name": "mk-live-chat-phrases",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Live chat phrase menu extension",
   "type": "module",
@@ -13,6 +13,7 @@
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit && svelte-check --tsconfig ./tsconfig.json --threshold error",
     "test": "vitest run",
+    "install:local": "node scripts/install-local.mjs",
     "postinstall": "wxt prepare"
   },
   "devDependencies": {

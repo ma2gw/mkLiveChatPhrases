@@ -6,23 +6,29 @@
  */
 export interface Settings {
   /**
-   * 無効にした mod の id（メニューにボタンを出さない）
-   * 「有効にしたもの」ではなく「無効にしたもの」を持つので、新しく足した mod は最初から有効になる
+   * 有効にした mod の id（メニューにボタンを出す）
+   * 初期値は空 = どの mod も無効（初めて使う人のメニューをすっきりさせるため）。新しく足した mod も最初は無効
    */
-  disabledMods: string[];
+  enabledMods: string[];
+  /**
+   * メニューの + の入力欄で、Enter を押したら追加する（変換中の Enter は除く）
+   * 誤って追加しないように、初期値はオフ（✓ ボタンだけで追加する）
+   */
+  submitOnEnter: boolean;
 }
 
 const KEY = 'settings';
 
 export function defaultSettings(): Settings {
-  return { disabledMods: [] };
+  return { enabledMods: [], submitOnEnter: false };
 }
 
-/** 読めないときや、形が違うときは初期値にする */
+/** 読めないときや、形が違うときは初期値にする（項目ごとに） */
 function parseSettings(value: unknown): Settings {
   const v = value as Partial<Settings> | undefined;
   return {
-    disabledMods: Array.isArray(v?.disabledMods) ? v.disabledMods.filter((x): x is string => typeof x === 'string') : [],
+    enabledMods: Array.isArray(v?.enabledMods) ? v.enabledMods.filter((x): x is string => typeof x === 'string') : [],
+    submitOnEnter: v?.submitOnEnter === true,
   };
 }
 

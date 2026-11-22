@@ -19,6 +19,14 @@
     moveChannel(data, id, to, list.length);
   }
 
+  /** ハンドルの入力。先頭の @（や /@）は外す（保存するときにも外すが、入力欄に残ると表示が @@ になるため） */
+  function onHandleInput(input: HTMLInputElement) {
+    if (!channel) return;
+    const value = input.value.replace(/^\s*\/?@+/, '');
+    if (value !== input.value) input.value = value;
+    channel.handle = value;
+  }
+
   function remove() {
     if (!channel || !confirm(t('deleteChannelConfirm', channelDisplayName(channel) || t('unnamedChannel')))) return;
     deleteChannel(data, id);
@@ -36,7 +44,16 @@
     </label>
     <label>
       <span>{t('handle')}</span>
-      <input bind:value={channel.handle} class:invalid={missingKey} placeholder="@handle" />
+      <!-- @ は固定の文字として外に出し、入力欄には @ を入れない（@ 付きで入力・貼り付けしても、その場で外す） -->
+      <span class="handle-field">
+        <span class="at">@</span>
+        <input
+          value={channel.handle ?? ''}
+          oninput={(e) => onHandleInput(e.currentTarget)}
+          class:invalid={missingKey}
+          placeholder="handle"
+        />
+      </span>
     </label>
     <label>
       <span>{t('youtubeChannelId')}</span>
@@ -76,6 +93,18 @@
   }
   .invalid {
     border-color: var(--danger);
+  }
+  /* @ を入力欄の左に固定で出す */
+  .handle-field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .handle-field .at {
+    color: var(--muted);
+  }
+  .handle-field input {
+    flex: 1;
   }
   .danger {
     margin-top: 24px;

@@ -15,6 +15,10 @@
   --lcp-accent: #3ea6ff;
   --lcp-once: #e8710a;
   --lcp-icon-bg: #1e8e3e;
+  --lcp-toolbar-bg: #f4f4f4;
+  --lcp-header-bg: #d9d9d9;
+  /* + を押したときの入力欄の行の高さ（フレーズ欄の下の余白もこれで計算する） */
+  --lcp-add-row: 28px;
   --lcp-ok: #2e9d5b;
   --lcp-ng: #d93025;
   position: fixed;
@@ -33,6 +37,8 @@
   --lcp-border: #3f3f3f;
   --lcp-button-bg: #303030;
   --lcp-button-hover: #3d3d3d;
+  --lcp-toolbar-bg: #2a2a2a;
+  --lcp-header-bg: #121212;
 }
 
 .lcp.lcp-dragging,
@@ -96,8 +102,19 @@
   gap: 6px;
   padding: 2px 2px 2px 8px;
   border-bottom: 1px solid var(--lcp-border);
+  /* 見出し → ツールバー → フレーズの順に明るくなるように、いちばん濃い色にする */
+  background: var(--lcp-header-bg);
   font-weight: bold;
   user-select: none;
+}
+
+/* 見出しの上のボタン（編集、格納）は、見出しの濃い色に合わせて少し濃く */
+.lcp-header .lcp-collapse:hover {
+  background: rgb(0 0 0 / 12%);
+}
+
+.lcp-dark .lcp-header .lcp-collapse:hover {
+  background: rgb(255 255 255 / 12%);
 }
 
 .lcp-channel-area {
@@ -165,7 +182,33 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 8px;
+  /*
+   * 下は入力欄の行の分の余白を足しておく（間隔 6px + 入力欄の行の高さ）
+   * + を押すと、この余白を入力欄の行が使うので、メニューの高さが変わらない
+   */
+  padding: 8px 8px calc(8px + 6px + var(--lcp-add-row));
+}
+
+/* 入力中は、足した余白を入力欄の行が使う（合計の高さは同じ） */
+.lcp-body.lcp-adding {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 8px;
+}
+
+.lcp-body.lcp-adding .lcp-add-form {
+  /* フレーズ欄のいちばん下に揃え、スクロールしても見えたままにする */
+  position: sticky;
+  bottom: 0;
+  flex: none;
+  margin-top: auto;
+  padding-top: 6px;
+  background: var(--lcp-bg);
+}
+
+/* 入力中の + は、場所だけ残して見えなくする（並びの高さを変えないため） */
+.lcp-add.lcp-add-hidden {
+  visibility: hidden;
 }
 
 .lcp-phrases {
@@ -234,19 +277,25 @@
   box-shadow: inset 0 0 0 1px var(--lcp-accent);
 }
 
-/* + を押したときの入力欄と ✓ / ×（1 行を使う） */
+/*
+ * + を押したときの入力欄と ✓ / ×（1 行を使う）
+ * 高さは --lcp-add-row に固定する（フォントで高さが変わると、足した余白とずれてガタつくため）
+ */
 .lcp-add-form {
   display: flex;
   flex: 1 1 100%;
   gap: 6px;
   min-width: 0;
+  height: var(--lcp-add-row);
 }
 
 .lcp-add-confirm,
 .lcp-add-cancel {
   flex: none;
   min-width: 28px;
-  padding: 4px 8px;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 0 8px;
   border: 1px solid var(--lcp-border);
   border-radius: 4px;
   background: var(--lcp-button-bg);
@@ -281,7 +330,8 @@
 .lcp-add-input {
   flex: 1;
   min-width: 0;
-  padding: 4px 8px;
+  height: 100%;
+  padding: 0 8px;
   border: 1px solid var(--lcp-accent);
   border-radius: 4px;
   background: var(--lcp-bg);
@@ -291,13 +341,25 @@
   cursor: text;
 }
 
-/* コピーボタンの並びの下の行: mod の切り替え。オンのときは色を付ける */
+/*
+ * 見出しの下のツールバー: mod の切り替え。オンのときは色を付ける
+ * フレーズの並びと区別できるように、背景の色を変え、下に線を引き、左端に「mod」と書く
+ */
 .lcp-mods {
   display: flex;
   flex: none;
+  align-items: center;
   gap: 6px;
-  padding: 6px 8px;
-  border-top: 1px solid var(--lcp-border);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--lcp-border);
+  background: var(--lcp-toolbar-bg);
+}
+
+.lcp-mods-label {
+  margin-right: 2px;
+  color: var(--lcp-muted);
+  font-size: 11px;
+  user-select: none;
 }
 
 .lcp-mod {
@@ -332,6 +394,12 @@
 .lcp-mod:focus-visible {
   outline: 2px solid var(--lcp-accent);
   outline-offset: 2px;
+}
+
+/* フレーズの並びの中の「定型文がまだありません」（+ と横に並べる） */
+.lcp-message.lcp-empty {
+  align-self: center;
+  margin: 0;
 }
 
 .lcp-message {

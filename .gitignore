@@ -27,3 +27,7 @@ CLAUDE.md
 *.njsproj
 *.sln
 *.sw?
+
+# 普段使いのビルド（npm run install:local のコピー先）
+local/
+

@@ -51,6 +51,10 @@
     "message": "Text to copy (press ✓ to add)",
     "description": "Placeholder of the input shown after pressing +"
   },
+  "addPhrasePlaceholderEnter": {
+    "message": "Text to copy (press ✓ or Enter to add)",
+    "description": "Placeholder of the input shown after pressing + (when adding with Enter is on)"
+  },
   "addConfirm": {
     "message": "Add",
     "description": "Tooltip and label of the ✓ button next to the input"
@@ -101,7 +105,10 @@
   "phrasesTab": { "message": "Phrases", "description": "Editor: tab of the phrase list" },
   "globalPhrasesLong": { "message": "All channels", "description": "Editor: row for phrases shared by all channels" },
   "modsHeading": { "message": "Mods", "description": "Editor: heading of the mods setting" },
-  "modsHelp": { "message": "Choose which mods to show in the menu. Changes take effect immediately.", "description": "Editor: help text of the mods setting" },
+  "modsHelp": { "message": "Choose which mods to show in the menu.", "description": "Editor: help text of the mods setting" },
+  "settingsHelp": { "message": "Settings are saved and applied to the menu immediately.", "description": "Editor: help text of the settings" },
+  "menuHeading": { "message": "Menu", "description": "Editor: heading of the menu settings" },
+  "submitOnEnter": { "message": "Press Enter to confirm when adding with +", "description": "Editor: setting to add a phrase with Enter" },
   "settingsSaveFailed": { "message": "Could not save the settings.", "description": "Editor: shown when settings could not be saved" },
 
   "globalPhrases": { "message": "All channels", "description": "Editor: phrases shared by all channels" },

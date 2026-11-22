@@ -16,31 +16,32 @@ describe('mod の一覧', () => {
     const ids = MODS.map((m) => m.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
-  it('無効にした mod を除き、MODS の順のまま返す', () => {
-    expect(enabledMods([repeat2Mod.id], [reverseMod, repeat2Mod, dotMod])).toEqual([reverseMod, dotMod]);
-    expect(enabledMods(['unknown'], [reverseMod])).toEqual([reverseMod]); // 知らない id は無視
+  it('有効にした mod だけを、MODS の順のまま返す', () => {
+    expect(enabledMods([dotMod.id, reverseMod.id], [reverseMod, repeat2Mod, dotMod])).toEqual([reverseMod, dotMod]);
+    expect(enabledMods(['unknown'], [reverseMod])).toEqual([]); // 知らない id は無視
+    expect(enabledMods([], [reverseMod])).toEqual([]); // 何も有効にしていなければ空
   });
 });
 
 describe('設定の保存と読み込み', () => {
   beforeEach(() => fakeBrowser.reset());
 
-  it('何も保存されていなければ、すべての mod が有効', async () => {
-    expect(await loadSettings()).toEqual({ disabledMods: [] });
+  it('何も保存されていなければ、どの mod も無効で、Enter では追加しない', async () => {
+    expect(await loadSettings()).toEqual({ enabledMods: [], submitOnEnter: false });
   });
 
   it('保存したものを読める。形が違えば初期値にする', async () => {
-    await saveSettings({ disabledMods: ['reverse'] });
-    expect(await loadSettings()).toEqual({ disabledMods: ['reverse'] });
-    await fakeBrowser.storage.sync.set({ settings: { disabledMods: 'broken' } });
-    expect(await loadSettings()).toEqual({ disabledMods: [] });
+    await saveSettings({ enabledMods: ['reverse'], submitOnEnter: true });
+    expect(await loadSettings()).toEqual({ enabledMods: ['reverse'], submitOnEnter: true });
+    await fakeBrowser.storage.sync.set({ settings: { enabledMods: 'broken', submitOnEnter: 'yes' } });
+    expect(await loadSettings()).toEqual({ enabledMods: [], submitOnEnter: false });
   });
 
   it('フレーズのデータを保存しても、設定は消えない', async () => {
-    await saveSettings({ disabledMods: ['reverse'] });
+    await saveSettings({ enabledMods: ['reverse'], submitOnEnter: true });
     const r = await saveData(createEmptyData());
     expect(r.ok).toBe(true);
-    expect(await loadSettings()).toEqual({ disabledMods: ['reverse'] });
+    expect(await loadSettings()).toEqual({ enabledMods: ['reverse'], submitOnEnter: true });
   });
 });
 

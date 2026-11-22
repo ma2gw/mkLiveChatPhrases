@@ -3,6 +3,10 @@
  *
  * YouTube は SPA なので、トップページなどから動画に移動しても読み込み直されない。
  * そのため youtube.com のすべてのページで動かし、メニューを出すかどうかは URL を見て決める
+ *
+ * 拡張機能を更新したり読み込み直したりすると、開いていたタブには古い content script が残り、
+ * 拡張機能の機能（storage、runtime.sendMessage など）を使うと「Extension context invalidated」になる。
+ * そのため、使う前に ctx.isValid で確かめ、無効になっていたらメニューを消して何もしない
  */
 import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
 import { addPhraseToChannel } from '../../lib/model/edit';
@@ -23,8 +27,31 @@ export default defineContentScript({
     let data: MenuState['data'] = null;
     let loadError: MenuState['loadError'];
 
+    /** content script の後片付け。無効になったあとは拡張機能の機能が例外を投げるので、握りつぶす */
+    const cleanup = (fn: () => void) =>
+      ctx.onInvalidated(() => {
+        try {
+          fn();
+        } catch {
+          // 無効になったあとなので、何もできない
+        }
+      });
+
+    /** 編集画面を開くよう background に頼む（content script からはタブを開けないため） */
+    const openEditor = (message: object) => {
+      if (!ctx.isValid) return;
+      try {
+        browser.runtime.sendMessage({ type: 'openEditor', ...message }).catch((e: unknown) => {
+          console.warn('[MkLiveChatPhrases] 編集画面を開けませんでした', e);
+        });
+      } catch (e) {
+        console.warn('[MkLiveChatPhrases] 編集画面を開けませんでした', e);
+      }
+    };
+
     const handlers: MenuHandlers = {
       async onAddPhrase(text) {
+        if (!ctx.isValid) return false;
         const page = getPageChannel();
         if (!page) return false;
         try {
@@ -45,19 +72,13 @@ export default defineContentScript({
         }
       },
       onOpenEditor() {
-        // content script からはタブを開けないので、background に頼む
         const page = getPageChannel();
         const channelId = data && page ? findChannel(data, page)?.id : undefined;
-        browser.runtime.sendMessage({ type: 'openEditor', channelId }).catch((e: unknown) => {
-          console.warn('[MkLiveChatPhrases] 編集画面を開けませんでした', e);
-        });
+        openEditor({ channelId });
       },
       onRegisterChannel() {
         const page = getPageChannel();
-        if (!page) return;
-        browser.runtime.sendMessage({ type: 'openEditor', newChannel: page }).catch((e: unknown) => {
-          console.warn('[MkLiveChatPhrases] 編集画面を開けませんでした', e);
-        });
+        if (page) openEditor({ newChannel: page });
       },
     };
 
@@ -74,7 +95,13 @@ export default defineContentScript({
     const menu = ui.mounted;
     if (!menu) return;
 
+    // 無効になったら（拡張機能を更新・読み込み直したら）、古いメニューを消す
+    cleanup(() => ui.remove());
+    // メニューを押したときにも確かめる（isValid は、無効なら onInvalidated を呼ぶ）
+    ui.shadowHost.addEventListener('pointerdown', () => void ctx.isValid, { capture: true });
+
     const refresh = () => {
+      if (!ctx.isValid) return;
       const visible = isTargetPage(location);
       menu.update({ visible, page: visible ? getPageChannel() : null, data, loadError });
     };
@@ -94,12 +121,11 @@ export default defineContentScript({
 
     await applyLoaded(loadData());
     // 編集画面や別の PC でデータが変わったら、メニューに反映する
-    const stopWatching = watchData((d) => void applyLoaded(Promise.resolve(d)));
-    ctx.onInvalidated(stopWatching);
+    cleanup(watchData((d) => void applyLoaded(Promise.resolve(d))));
 
-    // 設定（無効にした mod）を反映し、編集画面や別の PC で変わったら反映し直す
-    void loadSettings().then((s) => menu.setDisabledMods(s.disabledMods));
-    ctx.onInvalidated(watchSettings((s) => menu.setDisabledMods(s.disabledMods)));
+    // 設定（有効にした mod、Enter で追加するか）を反映し、編集画面や別の PC で変わったら反映し直す
+    void loadSettings().then((s) => menu.applySettings(s));
+    cleanup(watchSettings((s) => menu.applySettings(s)));
 
     watchPage(ctx, refresh);
   },

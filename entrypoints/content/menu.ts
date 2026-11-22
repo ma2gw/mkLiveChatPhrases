@@ -16,6 +16,7 @@ import { findChannel, type PageChannel } from '../../lib/model/match';
 import { channelDisplayName, type Phrase, type PhraseData } from '../../lib/model/types';
 import { t } from '../../lib/i18n';
 import { afterCopy, applyMods, enabledMods, MODS, toggleMod, type Mod } from '../../lib/mods';
+import type { Settings } from '../../lib/storage/settings';
 import { copyText } from './clipboard';
 import { DEFAULT_WIDGET, loadWidgetState, saveWidgetState, type WidgetState } from './widgetState';
 
@@ -81,7 +82,7 @@ const ICON_EDIT = 'M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 
 
 export interface Menu {
   update(state: MenuState): void;
-  setDisabledMods(disabled: readonly string[]): void;
+  applySettings(settings: Settings): void;
 }
 
 export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu {
@@ -116,13 +117,14 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
   header.append(channelArea, edit, collapse);
   const body = el('div', 'lcp-body');
 
-  // コピーボタンの並びの下の行: mod の切り替え（オンのときは色が付く）。中身は renderModBar で作る
+  // 見出しの下のツールバー: mod の切り替え（オンのときは色が付く）。中身は renderModBar で作る
   const modBar = el('div', 'lcp-mods');
   const modButtons = new Map<string, HTMLButtonElement>();
 
   const status = el('div', 'lcp-status');
   status.setAttribute('aria-live', 'polite');
-  panel.append(header, body, modBar, status);
+  // mod の行は見出しのすぐ下（フレーズの上）に、ツールバーとして置く
+  panel.append(header, modBar, body, status);
 
   root.append(icon, panel);
   container.appendChild(root);
@@ -215,7 +217,8 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
   /** 有効な mod のボタンを並べ直す（設定で無効にした mod は出さない。1 つもなければ行ごと隠す） */
   function renderModBar(mods: readonly Mod[]) {
     modButtons.clear();
-    modBar.replaceChildren();
+    // 左端に「mod」と書き、フレーズの並びではないことが分かるようにする
+    modBar.replaceChildren(el('span', 'lcp-mods-label', 'mod'));
     for (const mod of mods) {
       const label = t(mod.messageKey);
       // 1 回でオフに戻る mod は、オンのときの色を変える
@@ -232,7 +235,8 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
     // 無効にされた mod がオンのまま残らないようにする
     setActiveMods(new Set([...activeMods].filter((id) => modButtons.has(id))));
   }
-  renderModBar(MODS);
+  // 設定を読むまでは、どの mod も出さない（初期値はどれも無効）
+  renderModBar([]);
 
   void loadWidgetState().then((saved) => {
     widget = saved;
@@ -318,6 +322,8 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
 
   /** 入力中の文字列。入力欄を出していないときは null */
   let draft: string | null = null;
+  /** 設定: Enter で追加するか */
+  let submitOnEnter = false;
   /** 入力欄を開いたときのチャンネル。別のチャンネルに移ったら入力をやめる */
   let draftPageKey = '';
   let saving = false;
@@ -359,35 +365,49 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
     return button;
   };
 
-  /** フレーズの並びの最後に置く、+ ボタンまたは入力欄（✓ で追加、× か Esc でやめる） */
-  const addControl = (): HTMLElement => {
-    if (draft === null) {
-      const button = el('button', 'lcp-add', '+');
-      button.type = 'button';
-      button.title = t('addPhrase');
-      button.setAttribute('aria-label', t('addPhrase'));
-      button.addEventListener('click', () => {
-        draft = '';
-        draftPageKey = JSON.stringify(state.page);
-        render(true);
-      });
-      return button;
+  /**
+   * フレーズの並びの最後に置く + ボタン
+   * 入力中（hidden）も場所は残して見えなくするだけにする（並びの高さが変わってガタつかないように）
+   */
+  const addButton = (hidden: boolean): HTMLElement => {
+    const button = el('button', 'lcp-add', '+');
+    button.type = 'button';
+    button.title = t('addPhrase');
+    button.setAttribute('aria-label', t('addPhrase'));
+    if (hidden) {
+      button.classList.add('lcp-add-hidden');
+      button.tabIndex = -1;
+      button.setAttribute('aria-hidden', 'true');
     }
+    button.addEventListener('click', () => {
+      draft = '';
+      draftPageKey = JSON.stringify(state.page);
+      render(true);
+    });
+    return button;
+  };
+
+  /** + を押したときの入力欄（✓ で追加、× か Esc でやめる）。フレーズ欄のいちばん下の行に出す */
+  const addForm = (): HTMLElement => {
     const form = el('div', 'lcp-add-form');
     const input = el('input', 'lcp-add-input');
     input.type = 'text';
-    input.value = draft;
-    input.placeholder = t('addPhrasePlaceholder');
+    input.value = draft ?? '';
+    input.placeholder = t(submitOnEnter ? 'addPhrasePlaceholderEnter' : 'addPhrasePlaceholder');
     input.setAttribute('aria-label', t('addPhrase'));
     input.disabled = saving;
     input.addEventListener('input', () => {
       draft = input.value;
     });
-    // Enter では追加しない（誤って追加しないように）。追加は ✓ ボタンだけ
+    // Enter で追加するのは、設定でオンにしたときだけ（誤って追加しないように、初期値はオフ）
+    // 日本語の変換を確定する Enter では追加しない
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         closeAdd();
+      } else if (e.key === 'Enter' && submitOnEnter && !e.isComposing) {
+        e.preventDefault();
+        void submitAdd(form, input);
       }
     });
     // 何も入力せずにほかの場所を押したら閉じる（入力途中の文字は消さない。✓ / × に移るときは閉じない）
@@ -439,14 +459,21 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
       // 見出しは付けず、共通 → チャンネルの順に並べるだけ
       const phrases = [...data.globalPhrases, ...(channel?.phrases ?? [])];
       const children: HTMLElement[] = [];
-      if (phrases.length === 0) children.push(el('p', 'lcp-message', t('noPhrases')));
-      // チャンネルが分からないときは追加できない
-      if (phrases.length > 0 || page) {
+      const adding = page !== null && draft !== null;
+      if (phrases.length === 0 && !page) {
+        // チャンネルが分からず、追加もできないとき
+        children.push(el('p', 'lcp-message', t('noPhrases')));
+      } else {
         const list = el('div', 'lcp-phrases');
+        // フレーズがないときは、その旨をフレーズと同じ並びに置き、横に + を並べる
+        if (phrases.length === 0) list.append(el('span', 'lcp-message lcp-empty', t('noPhrases')));
         list.append(...phrases.map(phraseButton));
-        if (page) list.append(addControl());
+        // + は並びの最後に置く。入力中は、入力欄をフレーズ欄のいちばん下の行に出す（下合わせ）
+        if (page) list.append(addButton(adding));
         children.push(list);
       }
+      if (adding) children.push(addForm());
+      body.classList.toggle('lcp-adding', adding);
       body.replaceChildren(...children);
     } else {
       body.replaceChildren();
@@ -465,14 +492,20 @@ export function createMenu(container: HTMLElement, handlers: MenuHandlers): Menu
       state = next;
       // YouTube のダークテーマに合わせる（<html dark> が付く）
       root.classList.toggle('lcp-dark', document.documentElement.hasAttribute('dark'));
-      const wasHidden = root.hidden;
+      // hidden は新しい型定義では 'until-found' も取りうるので、真偽値にそろえる
+      const wasHidden = root.hidden !== false;
       applyVisibility();
       if (widget.open) render(wasHidden);
       if (wasHidden && !root.hidden) place();
     },
-    /** 設定で無効にした mod を反映する */
-    setDisabledMods(disabled: readonly string[]) {
-      renderModBar(enabledMods(disabled));
+    /** 設定（無効にした mod、Enter で追加するか）を反映する */
+    applySettings(settings: Settings) {
+      renderModBar(enabledMods(settings.enabledMods));
+      if (submitOnEnter !== settings.submitOnEnter) {
+        submitOnEnter = settings.submitOnEnter;
+        // 入力欄の案内の文を変えるために作り直す
+        if (draft !== null) render(true);
+      }
       // 行が増えたり減ったりして、はみ出すことがある
       if (widget.open) place();
     },
