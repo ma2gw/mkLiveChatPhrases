@@ -5,7 +5,16 @@
  * - それ以外: 渡されたデータを直接書き換える（編集画面の下書きに使う）
  */
 import { findChannel, type PageChannel } from './match';
-import { newId, SITES, type Channel, type Group, type PhraseData, type SiteAccount } from './types';
+import {
+  channelDisplayName,
+  newId,
+  SITES,
+  type Channel,
+  type Group,
+  type Phrase,
+  type PhraseData,
+  type SiteAccount,
+} from './types';
 import { normalizeHandle } from './validate';
 
 /**
@@ -112,6 +121,138 @@ export function deleteGroup(data: PhraseData, groupId: string): void {
   if (index < 0) return;
   const [group] = data.groups.splice(index, 1);
   data.ungroupedChannelIds.push(...(group?.channelIds ?? []));
+}
+
+/**
+ * 表示名で比べる（大文字と小文字、全角と半角の違いは無視し、数字は数として比べる）
+ * 記号も無視する（YouTube のハンドルの @ で、名前のないチャンネルが先頭に固まらないように）
+ */
+const nameCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base', ignorePunctuation: true });
+
+/**
+ * 置き場所（グループの id、グループなしは null）のチャンネルを、表示名の順に並べ替える
+ * 表示名がない（アカウントもない）チャンネルは最後に置く。同じ名前どうしは今の順のまま
+ */
+export function sortChannelsByName(data: PhraseData, place: string | null): void {
+  const list = listOf(data, place);
+  if (!list) return;
+  const nameOf = (id: string) => {
+    const channel = data.channels[id];
+    return channel ? channelDisplayName(channel) : '';
+  };
+  const sorted = [...list].sort((a, b) => {
+    const na = nameOf(a);
+    const nb = nameOf(b);
+    if (!na || !nb) return Number(!na) - Number(!nb);
+    return nameCollator.compare(na, nb);
+  });
+  list.splice(0, list.length, ...sorted);
+}
+
+/** インポートで、何をどれだけ足したか */
+export interface MergeSummary {
+  /** 新しく作ったグループの数 */
+  addedGroups: number;
+  /** 新しく登録したチャンネルの数 */
+  addedChannels: number;
+  /** すでに登録していて、定型文や情報を足したチャンネルの数 */
+  updatedChannels: number;
+  /** 足した定型文の数（共通とチャンネルの合計） */
+  addedPhrases: number;
+}
+
+/**
+ * 読み込んだデータ（incoming）を、今のデータ（data）にマージする（インポート）
+ * - 共通の定型文: 同じ文がなければ最後に足す
+ * - すでに登録しているチャンネル（どれかのサイトで、同じハンドルか同じチャンネル ID）: 今のチャンネルに足す
+ *   - 同じ文がない定型文を最後に足す
+ *   - 表示名がなければ、ファイルの表示名を入れる（あれば今のまま）
+ *   - 今のチャンネルにないサイトのアカウントを足す（ほかのチャンネルが使っていれば足さない）
+ *   - 置き場所（グループ）は今のまま
+ * - 登録していないチャンネル: 新しく登録する。ファイルでグループに入っていれば、同じ名前のグループの最後に入れる
+ *   （同じ名前のグループがなければ作る）。グループに入っていなければ「グループなし」の最後に入れる
+ * id はすべて作り直す（今のデータの id とぶつからないように）。incoming は書き換えない
+ */
+export function mergeData(data: PhraseData, incoming: PhraseData): MergeSummary {
+  const summary: MergeSummary = { addedGroups: 0, addedChannels: 0, updatedChannels: 0, addedPhrases: 0 };
+
+  /** 同じ文がない定型文だけを、新しい id で足す */
+  const appendPhrases = (to: Phrase[], from: Phrase[]): number => {
+    const texts = new Set(to.map((p) => p.text));
+    let count = 0;
+    for (const p of from) {
+      if (texts.has(p.text)) continue;
+      texts.add(p.text);
+      to.push(p.label === undefined ? { id: newId(), text: p.text } : { id: newId(), text: p.text, label: p.label });
+      count++;
+    }
+    return count;
+  };
+
+  summary.addedPhrases += appendPhrases(data.globalPhrases, incoming.globalPhrases);
+
+  /** 同じ名前のグループのチャンネルの並び（なければ作る） */
+  const groupList = (name: string): string[] => {
+    const found = data.groups.find((g) => g.name.trim() === name.trim());
+    if (found) return found.channelIds;
+    addGroup(data, name);
+    summary.addedGroups++;
+    // 編集画面の下書き（Svelte の $state）では、入れたあとの要素から取り直す
+    return data.groups[data.groups.length - 1]!.channelIds;
+  };
+
+  const places: { groupName: string | null; channelIds: string[] }[] = [
+    ...incoming.groups.map((g) => ({ groupName: g.name, channelIds: g.channelIds })),
+    { groupName: null, channelIds: incoming.ungroupedChannelIds },
+  ];
+  for (const { groupName, channelIds } of places) {
+    for (const id of channelIds) {
+      const channel = incoming.channels[id];
+      if (!channel) continue;
+      const existing = findExisting(data, channel);
+      if (existing) {
+        let changed = false;
+        if (!existing.name && channel.name) {
+          existing.name = channel.name;
+          changed = true;
+        }
+        for (const site of SITES) {
+          const account = channel.accounts[site];
+          if (!account || existing.accounts[site] || findChannel(data, { site, ...account })) continue;
+          existing.accounts[site] = { ...account };
+          changed = true;
+        }
+        const added = appendPhrases(existing.phrases, channel.phrases);
+        summary.addedPhrases += added;
+        if (changed || added > 0) summary.updatedChannels++;
+        continue;
+      }
+      // アカウントは 1 段ずつコピーする（structuredClone は Svelte の $state のプロキシを渡されると失敗するため）
+      const accounts: Channel['accounts'] = {};
+      for (const site of SITES) {
+        const account = channel.accounts[site];
+        if (account) accounts[site] = { ...account };
+      }
+      const created: Channel = { id: newId(), accounts, phrases: [] };
+      if (channel.name !== undefined) created.name = channel.name;
+      summary.addedPhrases += appendPhrases(created.phrases, channel.phrases);
+      data.channels[created.id] = created;
+      (groupName === null ? data.ungroupedChannelIds : groupList(groupName)).push(created.id);
+      summary.addedChannels++;
+    }
+  }
+  return summary;
+}
+
+/** どれかのサイトのアカウントで、すでに登録しているチャンネルを探す */
+function findExisting(data: PhraseData, channel: Channel): Channel | undefined {
+  for (const site of SITES) {
+    const account = channel.accounts[site];
+    if (!account) continue;
+    const found = findChannel(data, { site, ...account });
+    if (found) return found;
+  }
+  return undefined;
 }
 
 /**

@@ -10,7 +10,7 @@
   import { onDestroy, untrack } from 'svelte';
   import { t } from '../../lib/i18n';
   import { canonicalJson } from '../../lib/model/compare';
-  import { newChannelFor, normalizeForSave } from '../../lib/model/edit';
+  import { mergeData, newChannelFor, normalizeForSave } from '../../lib/model/edit';
   import { findChannel, type PageChannel } from '../../lib/model/match';
   import { SITES, type PhraseData, type Site } from '../../lib/model/types';
   import { checkRules } from '../../lib/model/validate';
@@ -32,6 +32,16 @@
   import { editor } from './state.svelte';
 
   let saving = $state(false);
+
+  /**
+   * タイトルの横に出すバージョン（manifest の version = package.json の version）
+   * どの版を開いているか分かるように、開発中の版には印を付ける
+   * - dev: npm run dev
+   * - local: npm run install:local（manifest に key を入れるのは、このビルドだけ）
+   */
+  const manifest = browser.runtime.getManifest();
+  const buildLabel = import.meta.env.DEV ? 'dev' : 'key' in manifest ? 'local' : '';
+  const versionText = `v${manifest.version}${buildLabel ? ` (${buildLabel})` : ''}`;
   let fileInput: HTMLInputElement;
 
   const dirty = $derived(editor.draft !== null && canonicalJson(editor.draft) !== editor.savedJson);
@@ -54,11 +64,11 @@
     editor.externalChange = false;
   }
 
-  function showNotice(message: string) {
+  function showNotice(message: string, ms = 2000) {
     editor.notice = message;
     setTimeout(() => {
       if (editor.notice === message) editor.notice = '';
-    }, 2000);
+    }, ms);
   }
 
   // ---------------------------------------------------------------------------
@@ -167,24 +177,33 @@
     URL.revokeObjectURL(a.href);
   }
 
+  /**
+   * インポート: 読み込んだデータを、編集中のデータにマージする（lib/model/edit.ts の mergeData）
+   * 保存はしない（中身を見てから保存ボタンで保存する。やめたいときは保存せずに閉じる）
+   * 全部を入れ替えたいときは、設定の「すべて削除」のあとにインポートする
+   */
   async function importFile(file: File | undefined) {
-    if (!file) return;
+    if (!file || !editor.draft) return;
+    // 前のエラー（前のインポートや保存のもの）を消す。表示するのは、いつもこのインポートの結果だけにする
+    editor.errors = [];
     const result = importFromJson(await file.text());
     fileInput.value = ''; // 同じファイルをもう一度選べるようにする
     if (!result.ok) {
       editor.errors = result.errors;
       return;
     }
-    if (!confirm(t(dirty ? 'importConfirmUnsaved' : 'importConfirm'))) return;
-    const saved = await saveData(result.value);
-    if (!saved.ok) {
-      editor.errors = saved.errors;
+    // 下書きの写しで試しにマージして、何が増えるかを確認の画面に出す
+    const preview = mergeData($state.snapshot(editor.draft) as PhraseData, result.value);
+    const { addedGroups, addedChannels, updatedChannels, addedPhrases } = preview;
+    if (addedGroups + addedChannels + updatedChannels + addedPhrases === 0) {
+      alert(t('importNothing'));
       return;
     }
-    editor.errors = [];
-    setSaved(result.value);
-    editor.selection = { kind: 'global' };
-    showNotice(t('imported'));
+    // 確認に出すのは、新しいグループ、新しいチャンネル、足す定型文（共通とチャンネルの合計）の数
+    if (!confirm(t('importConfirm', String(addedGroups), String(addedChannels), String(addedPhrases)))) return;
+    mergeData(editor.draft, result.value);
+    if (editor.selection.kind === 'settings') editor.selection = { kind: 'global' }; // 足したものが見えるように
+    showNotice(t('importMerged'), 1000);
   }
 
   // ---------------------------------------------------------------------------
@@ -209,7 +228,7 @@
 
 <header>
   <div class="header-inner">
-  <h1>{t('extName')}</h1>
+  <h1>{t('extName')} <span class="version">{versionText}</span></h1>
   <div class="bar">
     {#if editor.notice}
       <span class="status">{editor.notice}</span>
@@ -232,6 +251,7 @@
   </div>
   </div>
 </header>
+
 
 <div class="page">
 
@@ -296,6 +316,13 @@
   h1 {
     margin: 0;
     font-size: 16px;
+  }
+  /* バージョン: タイトルの横に小さく薄く */
+  .version {
+    margin-left: 4px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: normal;
   }
   .bar {
     display: flex;
