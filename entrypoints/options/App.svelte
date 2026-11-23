@@ -174,6 +174,8 @@
    */
   async function importFile(file: File | undefined) {
     if (!file || !editor.draft) return;
+    // 前のエラー（前のインポートや保存のもの）を消す。表示するのは、いつもこのインポートの結果だけにする
+    editor.errors = [];
     const result = importFromJson(await file.text());
     fileInput.value = ''; // 同じファイルをもう一度選べるようにする
     if (!result.ok) {
@@ -191,7 +193,7 @@
     if (!confirm(t('importConfirm', String(addedGroups), String(addedChannels), String(addedPhrases)))) return;
     mergeData(editor.draft, result.value);
     if (editor.selection.kind === 'settings') editor.selection = { kind: 'global' }; // 足したものが見えるように
-    showNotice(t('importMerged'), 6000);
+    showNotice(t('importMerged'), 1000);
   }
 
   // ---------------------------------------------------------------------------

@@ -86,7 +86,7 @@
   "import": { "message": "Import", "description": "Editor: import button" },
   "importConfirm": {"message":"This will be added to your current data.\n\n- New groups: $GROUPS$\n- New channels: $CHANNELS$\n- Phrases to add: $PHRASES$\n\nDo you want to continue?\n(Nothing is saved until you click Save.)","description":"Editor: confirmation before importing (with breakdown)","placeholders":{"groups":{"content":"$1"},"channels":{"content":"$2"},"phrases":{"content":"$3"}}},
   "importNothing": {"message":"The imported data has nothing that your current data doesn't already have.","description":"Editor: shown when importing would add nothing"},
-  "importMerged": {"message":"Imported. Click Save to keep the changes.","description":"Editor: shown after importing"},
+  "importMerged": {"message":"Imported","description":"Editor: shown after importing"},
   "export": { "message": "Export", "description": "Editor: export button" },
   "exportNeedsSave": { "message": "Save before exporting", "description": "Editor: tooltip of the export button when there are unsaved changes" },
   "sortByName": { "message": "Sort by name", "description": "Editor: button to sort channels in a group by display name" },

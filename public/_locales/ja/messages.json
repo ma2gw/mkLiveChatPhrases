@@ -86,7 +86,7 @@
   "import": { "message": "インポート", "description": "編集画面: インポートボタン" },
   "importConfirm": {"message":"現在のデータに追加します。\n\n・新しいグループ：$GROUPS$\n・新しいチャンネル：$CHANNELS$\n・追加されるフレーズ：$PHRASES$\n\n続けてもよろしいですか？\n（保存ボタンを押すまで保存はされません）","description":"編集画面: インポートの前の確認（内訳つき）","placeholders":{"groups":{"content":"$1"},"channels":{"content":"$2"},"phrases":{"content":"$3"}}},
   "importNothing": {"message":"読み込んだデータに、今のデータにないものはありませんでした。","description":"編集画面: インポートしても何も増えないとき"},
-  "importMerged": {"message":"インポートしました。保存ボタンで保存してください。","description":"編集画面: インポートしたあとの表示"},
+  "importMerged": {"message":"インポートしました","description":"編集画面: インポートしたあとの表示"},
   "export": { "message": "エクスポート", "description": "編集画面: エクスポートボタン" },
   "exportNeedsSave": { "message": "保存してからエクスポートしてください", "description": "編集画面: 保存していないときのエクスポートボタンのツールチップ" },
   "sortByName": { "message": "名前の順に並べる", "description": "編集画面: グループの中のチャンネルを表示名の順に並べ替えるボタン" },
