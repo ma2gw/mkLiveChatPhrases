@@ -6,12 +6,14 @@ import {
   addPhraseToChannel,
   deleteChannel,
   deleteGroup,
+  mergeData,
   moveChannel,
   moveInArray,
   normalizeForSave,
   placeOf,
+  sortChannelsByName,
 } from '../lib/model/edit';
-import { createEmptyData, newId, type Channel } from '../lib/model/types';
+import { createEmptyData, newId, type Channel, type PhraseData } from '../lib/model/types';
 import { checkRules } from '../lib/model/validate';
 
 describe('配列の中で動かす', () => {
@@ -145,5 +147,137 @@ describe('+ でフレーズを追加する', () => {
 
   it('チャンネルが分からないときは追加しない', () => {
     expect(addPhraseToChannel(createEmptyData(), { site: 'youtube' }, 'a')).toBeNull();
+  });
+});
+
+describe('チャンネルを表示名の順に並べる', () => {
+  it('グループの中だけを並べ、表示名がないチャンネルは最後', () => {
+    const data = createEmptyData();
+    const g = addGroup(data, 'G');
+    const names = ['b', 'A', '', 'ch10', 'ch2'];
+    const ids = names.map((name) => {
+      const c = addChannel(data, g.id);
+      if (name) c.name = name;
+      return c.id;
+    });
+    const other = addChannel(data, null);
+    other.name = 'z';
+    const b = addChannel(data, null);
+    b.name = 'a';
+    sortChannelsByName(data, g.id);
+    expect(g.channelIds.map((id) => data.channels[id]!.name ?? '')).toEqual(['A', 'b', 'ch2', 'ch10', '']);
+    expect(new Set(g.channelIds)).toEqual(new Set(ids));
+    // グループなしは並べていない
+    expect(data.ungroupedChannelIds).toEqual([other.id, b.id]);
+    sortChannelsByName(data, null);
+    expect(data.ungroupedChannelIds).toEqual([b.id, other.id]);
+  });
+  it('名前がなければハンドルで並べる', () => {
+    const data = createEmptyData();
+    const x = addChannel(data, null);
+    x.accounts.youtube = { handle: 'yy' };
+    const y = addChannel(data, null);
+    y.accounts.twitch = { handle: 'xx' };
+    sortChannelsByName(data, null);
+    expect(data.ungroupedChannelIds).toEqual([y.id, x.id]); // xx < @yy（記号は比べるときに無視される）
+  });
+});
+
+describe('インポート（マージ）', () => {
+  /** 今のデータ: 共通 1 つ、グループ「G」にチャンネル foo（YouTube） */
+  function current(): PhraseData {
+    const data = createEmptyData();
+    data.globalPhrases.push({ id: 'g1', text: 'こんにちは' });
+    const g = addGroup(data, 'G');
+    const foo = addChannel(data, g.id);
+    foo.name = 'Foo';
+    foo.accounts.youtube = { handle: 'foo' };
+    foo.phrases.push({ id: 'f1', text: 'ふー' });
+    return data;
+  }
+  /** 読み込むデータ */
+  function incoming(): PhraseData {
+    const data = createEmptyData();
+    data.globalPhrases.push({ id: 'x1', text: 'こんにちは' }, { id: 'x2', text: 'おつかれ', label: 'おつ' });
+    const g = addGroup(data, 'G');
+    const foo = addChannel(data, g.id);
+    foo.name = '別の名前';
+    foo.accounts.youtube = { handle: 'FOO' }; // 大文字と小文字が違っても同じチャンネル
+    foo.phrases.push({ id: 'x3', text: 'ふー' }, { id: 'x4', text: 'ばー' });
+    const bar = addChannel(data, g.id);
+    bar.accounts.twitch = { handle: 'bar' };
+    bar.phrases.push({ id: 'x5', text: 'ばー' });
+    const h = addGroup(data, 'H');
+    const baz = addChannel(data, h.id);
+    baz.accounts.youtube = { siteChannelId: 'UCabcdefghijklmnopqrstuv' };
+    const qux = addChannel(data, null);
+    qux.accounts.youtube = { handle: 'qux' };
+    return data;
+  }
+
+  it('同じ文はない定型文だけを足し、登録していないチャンネルを置き場所ごとに足す', () => {
+    const data = current();
+    const src = incoming();
+    const before = canonicalJson(src);
+    const summary = mergeData(data, src);
+    expect(summary).toEqual({ addedGroups: 1, addedChannels: 3, updatedChannels: 1, addedPhrases: 3 });
+    // incoming は書き換えない
+    expect(canonicalJson(src)).toBe(before);
+
+    expect(data.globalPhrases.map((p) => [p.text, p.label])).toEqual([
+      ['こんにちは', undefined],
+      ['おつかれ', 'おつ'],
+    ]);
+    const [g, h] = data.groups;
+    expect(data.groups.map((x) => x.name)).toEqual(['G', 'H']);
+    // 今のチャンネルは、名前もそのままで定型文だけ増える
+    const foo = data.channels[g!.channelIds[0]!]!;
+    expect(foo.name).toBe('Foo');
+    expect(foo.phrases.map((p) => p.text)).toEqual(['ふー', 'ばー']);
+    // 新しいチャンネルは同じ名前のグループへ（なければ作る）、グループなしはグループなしへ
+    expect(g!.channelIds).toHaveLength(2);
+    expect(data.channels[g!.channelIds[1]!]!.accounts).toEqual({ twitch: { handle: 'bar' } });
+    expect(data.channels[h!.channelIds[0]!]!.accounts).toEqual({ youtube: { siteChannelId: 'UCabcdefghijklmnopqrstuv' } });
+    expect(data.ungroupedChannelIds.map((id) => data.channels[id]!.accounts.youtube?.handle)).toEqual(['qux']);
+    // id はすべて作り直す
+    const srcIds = new Set([...Object.keys(src.channels), 'x1', 'x2', 'x3', 'x4', 'x5']);
+    const ids = [...Object.keys(data.channels), ...data.globalPhrases.map((p) => p.id), ...foo.phrases.map((p) => p.id)];
+    expect(ids.some((id) => srcIds.has(id))).toBe(false);
+    expect(checkRules(data)).toEqual([]);
+  });
+
+  it('登録済みのチャンネルに、ない表示名とないサイトのアカウントを補う（ほかのチャンネルが使っていれば補わない）', () => {
+    const data = createEmptyData();
+    const a = addChannel(data, null);
+    a.accounts.youtube = { handle: 'a' };
+    const b = addChannel(data, null);
+    b.name = 'B';
+    b.accounts.youtube = { handle: 'b' };
+    const used = addChannel(data, null);
+    used.accounts.twitch = { handle: 'used' };
+
+    const src = createEmptyData();
+    const sa = addChannel(src, null);
+    sa.name = 'A の名前';
+    sa.accounts = { youtube: { handle: 'a' }, twitch: { handle: 'a_tw' } };
+    const sb = addChannel(src, null);
+    sb.name = '別の名前';
+    sb.accounts = { youtube: { handle: 'b' }, twitch: { handle: 'used' } };
+
+    expect(mergeData(data, src)).toEqual({ addedGroups: 0, addedChannels: 0, updatedChannels: 1, addedPhrases: 0 });
+    expect(a.name).toBe('A の名前');
+    expect(a.accounts).toEqual({ youtube: { handle: 'a' }, twitch: { handle: 'a_tw' } });
+    // 表示名はあるので今のまま。Twitch の used はほかのチャンネルが使っているので補わない
+    expect(b.name).toBe('B');
+    expect(b.accounts).toEqual({ youtube: { handle: 'b' } });
+    expect(checkRules(data)).toEqual([]);
+  });
+
+  it('同じファイルを 2 回足しても、2 回目は何も増えない', () => {
+    const data = current();
+    mergeData(data, incoming());
+    const once = canonicalJson(data);
+    expect(mergeData(data, incoming())).toEqual({ addedGroups: 0, addedChannels: 0, updatedChannels: 0, addedPhrases: 0 });
+    expect(canonicalJson(data)).toBe(once);
   });
 });

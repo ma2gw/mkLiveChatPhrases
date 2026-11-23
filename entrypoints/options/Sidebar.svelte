@@ -4,9 +4,10 @@
    * - 押せる行は右端に › を出す（見出しと見分けるため）。クリックで右側に編集するものを出す
    * - ≡ をドラッグして、グループやチャンネルを並べ替える。チャンネルはグループの間でも動かせる
    * - グループの見出しにチャンネルを落とすと、そのグループの最後に入る
+   * - グループ（とグループなし）の見出しの右の A→Z で、中のチャンネルを名前の順に並べる（チャンネルが 2 つ以上のとき）
    */
   import { t } from '../../lib/i18n';
-  import { addChannel, addGroup, moveChannel, moveInArray, placeOf } from '../../lib/model/edit';
+  import { addChannel, addGroup, moveChannel, moveInArray, placeOf, sortChannelsByName } from '../../lib/model/edit';
   import { channelDisplayName, type Channel } from '../../lib/model/types';
   import { dragging, endDrag, hintAt, overEnd, overRow, startDrag } from './dnd.svelte';
   import { editor, type Selection } from './state.svelte';
@@ -165,6 +166,11 @@
           >
             <span class="item-label">{group.name || t('unnamedGroup')}</span>
           </button>
+          {#if group.channelIds.length >= 2}
+            <button type="button" class="sort" title={t('sortByName')} onclick={() => sortChannelsByName(data, group.id)}
+              >A→Z</button
+            >
+          {/if}
         </div>
         {#if !collapsed[group.id]}
           {@render channelRows(group.id, group.channelIds)}
@@ -185,7 +191,13 @@
     ondrop={(e) => dropChannel(e, UNGROUPED, overEnd(e, 'channel', UNGROUPED, data.ungroupedChannelIds.length))}
     role="group"
   >
-    {t('ungrouped')}
+    <span class="ungrouped-label">{t('ungrouped')}</span>
+    <!-- グループなしには編集画面がないので、見出しの横に並べ替えのボタンを置く -->
+    {#if data.ungroupedChannelIds.length >= 2}
+      <button type="button" class="sort" title={t('sortByName')} onclick={() => sortChannelsByName(data, null)}
+        >A→Z</button
+      >
+    {/if}
   </div>
   {@render channelRows(UNGROUPED, data.ungroupedChannelIds)}
 
@@ -263,6 +275,25 @@
     color: var(--muted);
     font-size: 12px;
     font-weight: normal;
+  }
+  .ungrouped-label {
+    flex: 1;
+  }
+  /* グループなしの並べ替え: 見出しと同じく小さく薄い文字。押せることはマウスを乗せた背景で示す */
+  .sort {
+    padding: 0 6px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    box-shadow: none;
+    transform: none;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: normal;
+  }
+  .sort:hover {
+    background: var(--hover);
+    color: var(--fg);
   }
   .handle {
     cursor: grab;
