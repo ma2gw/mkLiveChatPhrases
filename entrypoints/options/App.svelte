@@ -32,6 +32,16 @@
   import { editor } from './state.svelte';
 
   let saving = $state(false);
+
+  /**
+   * タイトルの横に出すバージョン（manifest の version = package.json の version）
+   * どの版を開いているか分かるように、開発中の版には印を付ける
+   * - dev: npm run dev
+   * - local: npm run install:local（manifest に key を入れるのは、このビルドだけ）
+   */
+  const manifest = browser.runtime.getManifest();
+  const buildLabel = import.meta.env.DEV ? 'dev' : 'key' in manifest ? 'local' : '';
+  const versionText = `v${manifest.version}${buildLabel ? ` (${buildLabel})` : ''}`;
   let fileInput: HTMLInputElement;
 
   const dirty = $derived(editor.draft !== null && canonicalJson(editor.draft) !== editor.savedJson);
@@ -218,7 +228,7 @@
 
 <header>
   <div class="header-inner">
-  <h1>{t('extName')}</h1>
+  <h1>{t('extName')} <span class="version">{versionText}</span></h1>
   <div class="bar">
     {#if editor.notice}
       <span class="status">{editor.notice}</span>
@@ -306,6 +316,13 @@
   h1 {
     margin: 0;
     font-size: 16px;
+  }
+  /* バージョン: タイトルの横に小さく薄く */
+  .version {
+    margin-left: 4px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: normal;
   }
   .bar {
     display: flex;
