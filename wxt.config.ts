@@ -5,8 +5,9 @@ import { defineConfig } from 'wxt';
  * 普段使いのビルド（npm run install:local）のときだけ、manifest に key を入れて拡張機能の ID を固定する
  * （どの PC でも同じ ID になり、storage.sync が同期される。ストアに出すビルドには入れない）
  */
+const isLocalBuild = process.env.MK_LOCAL_BUILD === '1';
 const localKey =
-  process.env.MK_LOCAL_BUILD === '1' && existsSync('local-build-key.txt')
+  isLocalBuild && existsSync('local-build-key.txt')
     ? readFileSync('local-build-key.txt', 'utf8').trim()
     : undefined;
 
@@ -27,6 +28,11 @@ export default defineConfig({
     action: { default_title: '__MSG_actionHideMenu__' },
     ...(localKey ? { key: localKey } : {}),
   },
+  // 普段使いのビルドかどうか（編集画面のバージョンの横に「local」と出す）
+  // manifest の key では見分けられない（ストアから入れたものにも key が付くため）
+  vite: () => ({
+    define: { 'import.meta.env.MK_LOCAL_BUILD': JSON.stringify(isLocalBuild) },
+  }),
   webExt: {
     // npm run dev で起動する Chrome のプロフィールを残す（YouTube にログインしたままにするため）
     // .wxt は .gitignore に入っている

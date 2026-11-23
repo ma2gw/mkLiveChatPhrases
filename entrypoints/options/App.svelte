@@ -37,10 +37,11 @@
    * タイトルの横に出すバージョン（manifest の version = package.json の version）
    * どの版を開いているか分かるように、開発中の版には印を付ける
    * - dev: npm run dev
-   * - local: npm run install:local（manifest に key を入れるのは、このビルドだけ）
+   * - local: npm run install:local（wxt.config.ts がビルドのときに MK_LOCAL_BUILD を入れる。
+   *   manifest の key では見分けられない。ストアから入れたものにも key が付くため）
    */
   const manifest = browser.runtime.getManifest();
-  const buildLabel = import.meta.env.DEV ? 'dev' : 'key' in manifest ? 'local' : '';
+  const buildLabel = import.meta.env.DEV ? 'dev' : import.meta.env.MK_LOCAL_BUILD ? 'local' : '';
   const versionText = `v${manifest.version}${buildLabel ? ` (${buildLabel})` : ''}`;
   let fileInput: HTMLInputElement;
 
