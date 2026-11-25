@@ -1,5 +1,5 @@
 /**
- * YouTube と Twitch の上で動く content script
+ * YouTube、Twitch、ツイキャスの上で動く content script
  *
  * サイトごとのページを読む処理は sites/ のアダプターにまとめ、ホスト名で選ぶ
  * どちらも SPA なので、トップページなどから配信に移動しても読み込み直されない。
@@ -22,7 +22,7 @@ import { shouldShowMenu } from './visibility';
 
 export default defineContentScript({
   // サイトを足すときは、ここと sites/ のアダプターに足す
-  matches: ['*://www.youtube.com/*', '*://www.twitch.tv/*'],
+  matches: ['*://www.youtube.com/*', '*://www.twitch.tv/*', '*://twitcasting.tv/*'],
   // CSS は JS に埋め込み、createShadowRootUi の css で Shadow DOM に入れる
   // （'ui' にすると CSS ファイルを web_accessible_resources で公開する必要があるため）
   cssInjectionMode: 'manual',

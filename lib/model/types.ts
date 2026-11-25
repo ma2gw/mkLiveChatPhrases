@@ -23,24 +23,26 @@ export interface Phrase {
  * 対応しているサイト。ほかのサイトに対応するときは、ここと SITE_INFO に足す
  * （ページを読む処理は entrypoints/content/sites/ に足す）
  */
-export const SITES = ['youtube', 'twitch'] as const;
+export const SITES = ['youtube', 'twitch', 'twitcasting'] as const;
 export type Site = (typeof SITES)[number];
 
 /** サイトごとの見せ方（メニューと編集画面で使う） */
 export const SITE_INFO: Record<
   Site,
   {
-    /** 画面に出すサイトの名前 */
-    label: string;
-    /** ハンドルを見せるときに前に付ける文字（YouTube は @、Twitch は付けない） */
+    /** 画面に出すサイトの名前（_locales のキー。言語で名前が変わるサイトがあるため） */
+    labelKey: string;
+    /** ハンドルを見せるときに前に付ける文字（YouTube とツイキャスは @、Twitch は付けない） */
     handlePrefix: string;
     /** チャンネル ID の欄の案内。チャンネル ID を使わないサイトは null（欄を出さない） */
     idPlaceholder: string | null;
   }
 > = {
-  youtube: { label: 'YouTube', handlePrefix: '@', idPlaceholder: 'UC…' },
+  youtube: { labelKey: 'siteYoutube', handlePrefix: '@', idPlaceholder: 'UC…' },
   // Twitch は URL の twitch.tv/<名前> の名前をハンドルとして使う。ユーザー ID は URL に出ないので使わない
-  twitch: { label: 'Twitch', handlePrefix: '', idPlaceholder: null },
+  twitch: { labelKey: 'siteTwitch', handlePrefix: '', idPlaceholder: null },
+  // ツイキャスは URL の twitcasting.tv/<ID> の ID（c:foo のような印つきのものも）をハンドルとして使う
+  twitcasting: { labelKey: 'siteTwitcasting', handlePrefix: '@', idPlaceholder: null },
 };
 
 /** あるサイトでのアカウント（そのサイトのチャンネル 1 つ） */

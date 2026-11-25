@@ -20,7 +20,11 @@
   }
 
   /** ハンドルの欄の案内（サイトの見せ方は SITE_INFO） */
-  const HANDLE_PLACEHOLDER: Record<Site, string> = { youtube: 'handle', twitch: t('twitchHandlePlaceholder') };
+  const HANDLE_PLACEHOLDER: Record<Site, string> = {
+    youtube: 'handle',
+    twitch: t('twitchHandlePlaceholder'),
+    twitcasting: t('twitcastingHandlePlaceholder'),
+  };
 
   /** サイトのアカウントの欄を書き換える。アカウントがまだなければ作る（空になったものは保存するときに消える） */
   function setAccount(site: Site, key: keyof SiteAccount, value: string) {
@@ -64,7 +68,7 @@
     <!-- サイトごとのアカウント（対応するサイトが増えたら、ここに欄が増える） -->
     {#each SITES as site (site)}
       {@const info = SITE_INFO[site]}
-      <div class="site">{info.label}</div>
+      <div class="site">{t(info.labelKey)}</div>
       <label>
         <span>{t('handle')}</span>
         <!-- @ は固定の文字として外に出し、入力欄には @ を入れない（@ 付きで入力・貼り付けしても、その場で外す） -->
