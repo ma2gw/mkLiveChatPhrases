@@ -15,7 +15,7 @@ mkLiveChatPhrases（以下「本拡張機能」）は、ライブ配信のチャ
 | メニューの位置、開閉の状態、メニューを隠しているかどうか | `chrome.storage.local`（その端末だけ） |
 
 - `chrome.storage.sync` のデータは、ブラウザーの同期機能がオンのとき、利用者自身の Google アカウント（Microsoft Edge では Microsoft アカウント）を通じて、利用者のほかの端末と同期されます。この同期はブラウザーの機能であり、開発者はデータを受け取りません。
-- 本拡張機能は、YouTube と Twitch のページで、今見ているチャンネルを判定するために、ページの URL とチャンネルへのリンクを読み取ります。読み取った情報は、利用者がチャンネルを登録したときにだけ保存します。
+- 本拡張機能は、YouTube、Twitch、ツイキャスのページで、今見ているチャンネルを判定するために、ページの URL とチャンネルへのリンクを読み取ります。読み取った情報は、利用者がチャンネルを登録したときにだけ保存します。
 - クリップボードには、利用者が定型文のボタンを押したときにだけ書き込みます。クリップボードの内容は読み取りません。
 - エクスポートの機能で書き出したファイルは、利用者が選んだ場所に保存されるだけで、どこにも送信しません。
 
@@ -35,7 +35,7 @@ mkLiveChatPhrases（以下「本拡張機能」）は、ライブ配信のチャ
 | 権限 | 使う目的 |
 |---|---|
 | `storage` | 定型文と設定を保存するため |
-| `www.youtube.com`、`www.twitch.tv` へのアクセス | 配信のページにメニューを表示し、今見ているチャンネルを判定するため |
+| `www.youtube.com`、`www.twitch.tv`、`twitcasting.tv` へのアクセス | 配信のページにメニューを表示し、今見ているチャンネルを判定するため |
 
 ## 変更
 
@@ -62,7 +62,7 @@ mkLiveChatPhrases ("the extension") is a browser extension that copies preset ph
 | Menu position, open/closed state, and whether the menu is hidden | `chrome.storage.local` (this device only) |
 
 - When browser sync is turned on, data in `chrome.storage.sync` is synced to the user's other devices through the user's own Google account (or Microsoft account in Microsoft Edge). This sync is a browser feature; the developer does not receive the data.
-- On YouTube and Twitch pages, the extension reads the page URL and channel links to identify the channel being viewed. This information is stored only when the user registers the channel.
+- On YouTube, Twitch and TwitCasting pages, the extension reads the page URL and channel links to identify the channel being viewed. This information is stored only when the user registers the channel.
 - The extension writes to the clipboard only when the user clicks a phrase button. It never reads the clipboard.
 - Files created with the export feature are saved only to a location the user chooses and are not sent anywhere.
 
@@ -82,7 +82,7 @@ mkLiveChatPhrases ("the extension") is a browser extension that copies preset ph
 | Permission | Purpose |
 |---|---|
 | `storage` | To save phrases and settings |
-| Access to `www.youtube.com` and `www.twitch.tv` | To show the menu on stream pages and identify the channel being viewed |
+| Access to `www.youtube.com`, `www.twitch.tv` and `twitcasting.tv` | To show the menu on stream pages and identify the channel being viewed |
 
 ## Changes
 

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
 import { adapterFor } from '../entrypoints/content/sites';
+import { parseTwitcastingPath } from '../entrypoints/content/sites/twitcasting';
 import { parseTwitchPath } from '../entrypoints/content/sites/twitch';
 import { isTargetPage, parseChannelHref } from '../entrypoints/content/sites/youtube';
 import { shouldShowMenu } from '../entrypoints/content/visibility';
@@ -9,7 +10,31 @@ describe('サイトのアダプターを選ぶ', () => {
   it('ホスト名で選び、対応していなければ undefined', () => {
     expect(adapterFor('www.youtube.com')?.site).toBe('youtube');
     expect(adapterFor('www.twitch.tv')?.site).toBe('twitch');
+    expect(adapterFor('twitcasting.tv')?.site).toBe('twitcasting');
     expect(adapterFor('example.com')).toBeUndefined();
+  });
+});
+
+describe('ツイキャスのページを読む', () => {
+  it.each([
+    ['/foo_bar', { site: 'twitcasting', handle: 'foo_bar' }],
+    ['/FooBar/', { site: 'twitcasting', handle: 'foobar' }], // 小文字にそろえる
+    ['/c:foo_bar', { site: 'twitcasting', handle: 'c:foo_bar' }], // 印つきの ID
+    ['/c%3AFoo', { site: 'twitcasting', handle: 'c:foo' }], // : が %3A になっていても読む
+    ['/g:1234567890', { site: 'twitcasting', handle: 'g:1234567890' }], // Google（c: はキャスアカウント）
+    ['/f:1234567890', { site: 'twitcasting', handle: 'f:1234567890' }], // Facebook
+    ['/i:foo_bar', { site: 'twitcasting', handle: 'i:foo_bar' }], // Instagram（印のないものは X）
+    ['/ig:foo_bar', { site: 'twitcasting', handle: 'ig:foo_bar' }], // Instagram（印が 2 文字のもの）
+    ['/foo_bar/movie/123456', { site: 'twitcasting', handle: 'foo_bar' }], // 配信（と過去の配信）のページ
+    ['/', null],
+    ['/rankingindex.php', null], // サイトの機能のページ
+    ['/foo_bar/archive/', null], // 配信のページではない
+    ['/foo_bar/movie/abc', null],
+    ['/foo_bar/movie/123/extra', null],
+    ['/foo-bar', null], // ID に使えない文字
+    ['/%E0%A4%A', null], // 壊れた % でも例外を投げない
+  ])('%s', (pathname, expected) => {
+    expect(parseTwitcastingPath(pathname)).toEqual(expected);
   });
 });
 
@@ -73,6 +98,9 @@ describe('チャンネルの表示名', () => {
   it('Twitch のハンドルには @ を付けない。YouTube があれば YouTube を先に使う', () => {
     expect(channelDisplayName({ ...base, accounts: { twitch: { handle: 'foo' } } })).toBe('foo');
     expect(channelDisplayName({ ...base, accounts: { twitch: { handle: 'tw' }, youtube: { handle: 'yt' } } })).toBe('@yt');
+  });
+  it('ツイキャスのハンドルには @ を付ける', () => {
+    expect(channelDisplayName({ ...base, accounts: { twitcasting: { handle: 'c:foo' } } })).toBe('@c:foo');
   });
   it('アカウントがなければ空', () => {
     expect(channelDisplayName(base)).toBe('');

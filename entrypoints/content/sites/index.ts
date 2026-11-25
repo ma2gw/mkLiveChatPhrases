@@ -8,6 +8,7 @@
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 import type { PageChannel } from '../../../lib/model/match';
 import type { Site } from '../../../lib/model/types';
+import { twitcastingAdapter } from './twitcasting';
 import { twitchAdapter } from './twitch';
 import { youtubeAdapter } from './youtube';
 
@@ -25,7 +26,7 @@ export interface SiteAdapter {
   isDarkTheme(): boolean;
 }
 
-export const ADAPTERS: readonly SiteAdapter[] = [youtubeAdapter, twitchAdapter];
+export const ADAPTERS: readonly SiteAdapter[] = [youtubeAdapter, twitchAdapter, twitcastingAdapter];
 
 /** ホスト名からアダプターを選ぶ。対応していなければ undefined */
 export function adapterFor(hostname: string): SiteAdapter | undefined {
