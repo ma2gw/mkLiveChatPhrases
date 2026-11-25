@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { defineConfig } from 'wxt';
 
 /**
@@ -33,6 +34,19 @@ export default defineConfig({
   vite: () => ({
     define: { 'import.meta.env.MK_LOCAL_BUILD': JSON.stringify(isLocalBuild) },
   }),
+  hooks: {
+    // ストア版と見分けるため、アイコンを差し替える（public の外に置き、ストア用のビルドには入れない）
+    // - npm run dev: オレンジ（resources/icon-dev）
+    // - npm run install:local: ピンク（resources/icon-local）
+    'build:publicAssets': (wxt, files) => {
+      const dir = wxt.config.command === 'serve' ? 'resources/icon-dev' : isLocalBuild ? 'resources/icon-local' : null;
+      if (!dir) return;
+      for (const file of files) {
+        const m = file.relativeDest.match(/^icon[/\\](\d+\.png)$/);
+        if (m && 'absoluteSrc' in file) file.absoluteSrc = resolve(dir, m[1]!);
+      }
+    },
+  },
   webExt: {
     // npm run dev で起動する Chrome のプロフィールを残す（YouTube にログインしたままにするため）
     // .wxt は .gitignore に入っている
